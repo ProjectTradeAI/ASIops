@@ -6,7 +6,7 @@ import Sidebar from './Sidebar';
 import Breadcrumbs from './Breadcrumbs';
 import Footer from './Footer';
 
-const drawerWidth = 190;
+const drawerWidth = 280;
 
 export default function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -38,16 +38,15 @@ export default function MainLayout() {
           display: 'flex',
           flexDirection: 'column',
           minHeight: '100vh',
-          width: { sm: sidebarOpen ? `calc(100% - ${drawerWidth}px)` : '100%' },
-          ml: { sm: sidebarOpen ? `${drawerWidth}px` : 0 },
-          transition: 'margin-left 0.3s, width 0.3s',
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          ml: { sm: `${drawerWidth}px` },
         }}
       >
         {/* Spacer for fixed AppBar */}
         <Toolbar />
 
         {/* Content Area */}
-        <Box sx={{ flexGrow: 1, py: 3, pr: 2, pl: 0 }}>
+        <Box sx={{ flexGrow: 1, p: 3 }}>
           <Breadcrumbs />
           <Outlet />
         </Box>

@@ -40,9 +40,9 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-const drawerWidth = 190;
+const drawerWidth = 280;
 
-export default function Sidebar({ open, onClose }: SidebarProps) {
+export default function Sidebar({ onClose }: SidebarProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
@@ -63,12 +63,10 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
   return (
     <Drawer
-      variant="persistent"
-      open={open}
+      variant="permanent"
       sx={{
-        width: open ? drawerWidth : 0,
+        width: drawerWidth,
         flexShrink: 0,
-        transition: 'width 0.3s',
         '& .MuiDrawer-paper': {
           width: drawerWidth,
           boxSizing: 'border-box',
@@ -80,13 +78,13 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       <Toolbar />
       <Box sx={{ overflow: 'auto' }}>
         {/* Menu Header */}
-        <Box sx={{ px: 1.5, py: 1 }}>
+        <Box sx={{ p: 2 }}>
           <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 600 }}>
             MENU
           </Typography>
         </Box>
 
-        <List sx={{ '& .MuiListItemIcon-root': { minWidth: 36 }, '& .MuiListItemButton-root': { px: 1.5 } }}>
+        <List>
           {/* Dashboard */}
           <ListItem disablePadding>
             <ListItemButton
