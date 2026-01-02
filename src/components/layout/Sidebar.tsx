@@ -40,7 +40,7 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-const drawerWidth = 200;
+const drawerWidth = 190;
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const { t } = useTranslation();
@@ -80,13 +80,13 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       <Toolbar />
       <Box sx={{ overflow: 'auto' }}>
         {/* Menu Header */}
-        <Box sx={{ p: 2 }}>
+        <Box sx={{ px: 1.5, py: 1 }}>
           <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 600 }}>
             MENU
           </Typography>
         </Box>
 
-        <List>
+        <List sx={{ '& .MuiListItemIcon-root': { minWidth: 36 }, '& .MuiListItemButton-root': { px: 1.5 } }}>
           {/* Dashboard */}
           <ListItem disablePadding>
             <ListItemButton
