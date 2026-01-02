@@ -6,8 +6,6 @@ import Sidebar from './Sidebar';
 import Breadcrumbs from './Breadcrumbs';
 import Footer from './Footer';
 
-const drawerWidth = 280;
-
 export default function MainLayout() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -42,8 +40,6 @@ export default function MainLayout() {
           display: 'flex',
           flexDirection: 'column',
           minHeight: '100vh',
-          width: { xs: '100%', md: `calc(100% - ${drawerWidth}px)` },
-          ml: { xs: 0, md: `${drawerWidth}px` },
           transition: theme.transitions.create(['margin', 'width'], {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
