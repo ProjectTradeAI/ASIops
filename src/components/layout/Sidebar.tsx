@@ -42,7 +42,7 @@ interface SidebarProps {
 
 const drawerWidth = 280;
 
-export default function Sidebar({ onClose }: SidebarProps) {
+export default function Sidebar({ open, onClose }: SidebarProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
@@ -63,10 +63,12 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
   return (
     <Drawer
-      variant="permanent"
+      variant="persistent"
+      open={open}
       sx={{
-        width: drawerWidth,
+        width: open ? drawerWidth : 0,
         flexShrink: 0,
+        transition: 'width 0.3s',
         '& .MuiDrawer-paper': {
           width: drawerWidth,
           boxSizing: 'border-box',

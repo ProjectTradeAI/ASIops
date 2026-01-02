@@ -38,15 +38,16 @@ export default function MainLayout() {
           display: 'flex',
           flexDirection: 'column',
           minHeight: '100vh',
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
+          width: { sm: sidebarOpen ? `calc(100% - ${drawerWidth}px)` : '100%' },
+          ml: { sm: sidebarOpen ? `${drawerWidth}px` : 0 },
+          transition: 'margin-left 0.3s, width 0.3s',
         }}
       >
         {/* Spacer for fixed AppBar */}
         <Toolbar />
 
         {/* Content Area */}
-        <Box sx={{ flexGrow: 1, p: 3 }}>
+        <Box sx={{ flexGrow: 1, py: 3, px: 2 }}>
           <Breadcrumbs />
           <Outlet />
         </Box>
