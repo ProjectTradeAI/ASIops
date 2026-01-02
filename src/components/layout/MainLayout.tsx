@@ -47,7 +47,7 @@ export default function MainLayout() {
         <Toolbar />
 
         {/* Content Area */}
-        <Box sx={{ flexGrow: 1, py: 3, px: 2 }}>
+        <Box sx={{ flexGrow: 1, py: 3, pr: 2, pl: 0 }}>
           <Breadcrumbs />
           <Outlet />
         </Box>
