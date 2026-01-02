@@ -17,26 +17,23 @@ import { parseTurkishDateSafe } from '../../utils/dateUtils';
 export default function Dashboard() {
   const { t } = useTranslation();
 
-  // Calculate statistics from mock data
   const stats = useMemo(() => {
     const totalOrders = mockWorkOrders.length;
     const pendingOrders = mockWorkOrders.filter(
       (order) => order.status === 'in_progress' || order.status === 'created'
     ).length;
 
-    // Calculate completed this month (November 2025)
     const completedThisMonth = mockWorkOrders.filter((order) => {
       if (!order.reportDate) return false;
       const reportDate = parseTurkishDateSafe(order.reportDate);
       if (!reportDate) return false;
       return (
-        reportDate.getMonth() === 10 && // November (0-indexed)
+        reportDate.getMonth() === 10 &&
         reportDate.getFullYear() === 2025 &&
         order.status === 'completed'
       );
     }).length;
 
-    // Count unique employees from all work orders
     const allEmployees = new Set<string>();
     mockWorkOrders.forEach((order) => {
       order.employees.forEach((emp) => allEmployees.add(emp));
@@ -51,7 +48,6 @@ export default function Dashboard() {
     };
   }, []);
 
-  // Get recent completed work orders (last 5)
   const recentCompletions = useMemo(() => {
     return mockWorkOrders
       .filter((order) => order.status === 'completed' && order.reportDate)
@@ -64,76 +60,83 @@ export default function Dashboard() {
       .slice(0, 5);
   }, []);
 
-  // Generate activity chart data (last 7 days)
   const activityData = useMemo(() => {
     const days = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
     return days.map((day) => ({
       date: day,
-      created: Math.floor(Math.random() * 5) + 1, // Mock data
-      completed: Math.floor(Math.random() * 4) + 1, // Mock data
+      created: Math.floor(Math.random() * 5) + 1,
+      completed: Math.floor(Math.random() * 4) + 1,
     }));
   }, []);
 
   return (
     <Box>
-      {/* Page Title */}
-      <Typography variant="h4" gutterBottom sx={{ mb: 3, fontWeight: 600 }}>
-        {t('dashboard.title')}
-      </Typography>
+      <Box sx={{ mb: 4 }}>
+        <Typography 
+          variant="h4" 
+          sx={{ 
+            fontWeight: 700, 
+            mb: 1,
+            background: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}
+        >
+          {t('dashboard.title')}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {t('dashboard.welcomeMessage')}
+        </Typography>
+      </Box>
 
-      {/* Statistics Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} lg={3}>
           <StatCard
             title={t('dashboard.totalWorkOrders')}
             value={stats.totalOrders}
-            icon={<AssignmentIcon sx={{ fontSize: 28 }} />}
+            icon={<AssignmentIcon sx={{ fontSize: 26 }} />}
             color="primary"
             subtitle={t('dashboard.orders')}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} lg={3}>
           <StatCard
             title={t('dashboard.pendingOrders')}
             value={stats.pendingOrders}
-            icon={<ScheduleIcon sx={{ fontSize: 28 }} />}
+            icon={<ScheduleIcon sx={{ fontSize: 26 }} />}
             color="warning"
             subtitle={t('dashboard.orders')}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} lg={3}>
           <StatCard
             title={t('dashboard.completedThisMonth')}
             value={stats.completedThisMonth}
-            icon={<CheckCircleIcon sx={{ fontSize: 28 }} />}
+            icon={<CheckCircleIcon sx={{ fontSize: 26 }} />}
             color="success"
             subtitle={t('dashboard.thisMonth')}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} lg={3}>
           <StatCard
             title={t('dashboard.activeEmployees')}
             value={stats.activeEmployees}
-            icon={<PeopleIcon sx={{ fontSize: 28 }} />}
+            icon={<PeopleIcon sx={{ fontSize: 26 }} />}
             color="info"
             subtitle={t('dashboard.employees')}
           />
         </Grid>
       </Grid>
 
-      {/* Quick Actions */}
-      <Box sx={{ mb: 3 }}>
+      <Box sx={{ mb: 4 }}>
         <QuickActions />
       </Box>
 
-      {/* Charts and Tables */}
       <Grid container spacing={3}>
-        {/* Activity Chart */}
         <Grid item xs={12} lg={6}>
           <ActivityChart data={activityData} />
         </Grid>
-
-        {/* Recent Completions Table */}
         <Grid item xs={12} lg={6}>
           <RecentCompletions workOrders={recentCompletions} />
         </Grid>

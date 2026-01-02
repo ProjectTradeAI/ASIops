@@ -1,17 +1,15 @@
-import { Breadcrumbs as MuiBreadcrumbs, Link, Typography } from '@mui/material';
+import { Breadcrumbs as MuiBreadcrumbs, Typography, Link, Box } from '@mui/material';
 import { useLocation, Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import HomeIcon from '@mui/icons-material/Home';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 
 export default function Breadcrumbs() {
   const { t } = useTranslation();
   const location = useLocation();
 
-  // Build breadcrumb items from pathname
   const pathnames = location.pathname.split('/').filter((x) => x);
 
-  // Route name mapping for translations
   const getRouteName = (path: string): string => {
     const routeMap: Record<string, string> = {
       'work-orders': t('menu.workOrders'),
@@ -37,62 +35,77 @@ export default function Breadcrumbs() {
     return routeMap[path] || path;
   };
 
-  // Don't show breadcrumbs on home page
   if (pathnames.length === 0) {
     return null;
   }
 
   return (
-    <MuiBreadcrumbs
-      separator={<NavigateNextIcon fontSize="small" />}
-      aria-label="breadcrumb"
-      sx={{ mb: 3 }}
-    >
-      {/* Home link */}
-      <Link
-        component={RouterLink}
-        to="/"
-        underline="hover"
+    <Box sx={{ mb: 3 }}>
+      <MuiBreadcrumbs 
+        separator={<NavigateNextIcon sx={{ fontSize: 16, color: 'text.disabled' }} />}
         sx={{
-          display: 'flex',
-          alignItems: 'center',
-          color: 'text.primary',
-          '&:hover': { color: 'primary.main' },
+          '& .MuiBreadcrumbs-separator': {
+            mx: 1,
+          },
         }}
       >
-        <HomeIcon sx={{ mr: 0.5 }} fontSize="small" />
-        {t('menu.dashboard')}
-      </Link>
+        <Link
+          component={RouterLink}
+          to="/"
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            color: 'text.secondary',
+            textDecoration: 'none',
+            fontSize: '0.875rem',
+            fontWeight: 500,
+            transition: 'color 0.2s',
+            '&:hover': {
+              color: 'primary.main',
+            },
+          }}
+        >
+          <HomeIcon sx={{ fontSize: 18 }} />
+          {t('menu.dashboard')}
+        </Link>
+        {pathnames.map((value, index) => {
+          const last = index === pathnames.length - 1;
+          const to = `/${pathnames.slice(0, index + 1).join('/')}`;
+          const routeName = getRouteName(value);
 
-      {/* Dynamic breadcrumb items */}
-      {pathnames.map((value, index) => {
-        const last = index === pathnames.length - 1;
-        const to = `/${pathnames.slice(0, index + 1).join('/')}`;
-        const routeName = getRouteName(value);
-
-        return last ? (
-          <Typography
-            key={to}
-            color="text.primary"
-            sx={{ display: 'flex', alignItems: 'center', fontWeight: 600 }}
-          >
-            {routeName}
-          </Typography>
-        ) : (
-          <Link
-            component={RouterLink}
-            to={to}
-            key={to}
-            underline="hover"
-            sx={{
-              color: 'text.primary',
-              '&:hover': { color: 'primary.main' },
-            }}
-          >
-            {routeName}
-          </Link>
-        );
-      })}
-    </MuiBreadcrumbs>
+          return last ? (
+            <Typography 
+              key={to} 
+              sx={{ 
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                color: 'text.primary',
+              }}
+            >
+              {routeName}
+            </Typography>
+          ) : (
+            <Link
+              key={to}
+              component={RouterLink}
+              to={to}
+              sx={{
+                color: 'text.secondary',
+                textDecoration: 'none',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                transition: 'color 0.2s',
+                '&:hover': {
+                  color: 'primary.main',
+                },
+              }}
+            >
+              {routeName}
+            </Link>
+          );
+        })}
+      </MuiBreadcrumbs>
+    </Box>
   );
 }

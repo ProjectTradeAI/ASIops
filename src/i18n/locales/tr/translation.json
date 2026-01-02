@@ -44,8 +44,17 @@
     "profile": "Profil",
     "logout": "Çıkış"
   },
+  "sidebar": {
+    "mainMenu": "Ana Menü",
+    "workOrdersSection": "İş Emirleri",
+    "dataSection": "Veriler",
+    "systemSection": "Sistem",
+    "appName": "ASI Operations Tracker",
+    "version": "v0.0.1 Prototip"
+  },
   "dashboard": {
     "title": "Ana Panel",
+    "welcomeMessage": "Hoş geldiniz! İşte bugünkü özet bilgileriniz.",
     "totalWorkOrders": "Toplam İş Emirleri",
     "pendingOrders": "Bekleyen İşler",
     "completedThisMonth": "Bu Ay Tamamlanan",
@@ -57,7 +66,9 @@
     "last7Days": "Son 7 gün",
     "thisMonth": "Bu ay",
     "employees": "çalışan",
-    "orders": "iş emri"
+    "orders": "iş emri",
+    "viewAll": "Tümünü Gör",
+    "exportExcel": "Excel'e Aktar"
   },
   "workOrder": {
     "title": "İş Emri",
