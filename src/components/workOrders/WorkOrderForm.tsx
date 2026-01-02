@@ -535,9 +535,9 @@ export default function WorkOrderForm() {
                 </Stack>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12}>
                 <Stack direction="row" spacing={2} alignItems="center">
-                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 200 }}>
                     {t('workOrder.tonnage').toUpperCase()}
                   </Typography>
                   <TextField
@@ -551,9 +551,9 @@ export default function WorkOrderForm() {
                 </Stack>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12}>
                 <Stack direction="row" spacing={2} alignItems="center">
-                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 200 }}>
                     {t('workOrder.topic').toUpperCase()}
                   </Typography>
                   <Autocomplete
@@ -561,7 +561,7 @@ export default function WorkOrderForm() {
                     options={mockTopics}
                     value={formData.topic || null}
                     onChange={(_, v) => handleChange('topic', v || '')}
-                    sx={{ flex: 1, maxWidth: 250 }}
+                    sx={{ flex: 1, maxWidth: 400 }}
                     renderInput={(params) => (
                       <TextField {...params} placeholder={t('common.pleaseSelect')} />
                     )}
@@ -572,9 +572,9 @@ export default function WorkOrderForm() {
                 </Stack>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12}>
                 <Stack direction="row" spacing={2} alignItems="center">
-                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 200 }}>
                     {t('workOrder.customerRefNo').toUpperCase()}
                   </Typography>
                   <TextField
@@ -587,9 +587,9 @@ export default function WorkOrderForm() {
                 </Stack>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12}>
                 <Stack direction="row" spacing={2} alignItems="center">
-                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 200 }}>
                     {t('workOrder.company').toUpperCase()}
                   </Typography>
                   <Autocomplete
@@ -597,7 +597,7 @@ export default function WorkOrderForm() {
                     options={mockCompanies}
                     value={formData.companyName || null}
                     onChange={(_, v) => handleChange('companyName', v || '')}
-                    sx={{ flex: 1, maxWidth: 300 }}
+                    sx={{ flex: 1, maxWidth: 500 }}
                     renderInput={(params) => (
                       <TextField
                         {...params}
@@ -613,9 +613,9 @@ export default function WorkOrderForm() {
                 </Stack>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12}>
                 <Stack direction="row" spacing={2} alignItems="center">
-                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 200 }}>
                     {t('workOrder.ship').toUpperCase()}
                   </Typography>
                   <Autocomplete
@@ -623,7 +623,7 @@ export default function WorkOrderForm() {
                     options={mockShips}
                     value={formData.shipName || null}
                     onChange={(_, v) => handleChange('shipName', v || '')}
-                    sx={{ flex: 1, maxWidth: 300 }}
+                    sx={{ flex: 1, maxWidth: 500 }}
                     renderInput={(params) => (
                       <TextField {...params} placeholder={t('common.pleaseSelect')} />
                     )}
@@ -634,9 +634,9 @@ export default function WorkOrderForm() {
                 </Stack>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12}>
                 <Stack direction="row" spacing={2} alignItems="center">
-                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 200 }}>
                     {t('workOrder.inspectionArea').toUpperCase()}
                   </Typography>
                   <Autocomplete
@@ -644,7 +644,7 @@ export default function WorkOrderForm() {
                     options={mockInspectionAreas}
                     value={formData.inspectionArea || null}
                     onChange={(_, v) => handleChange('inspectionArea', v || '')}
-                    sx={{ flex: 1, maxWidth: 300 }}
+                    sx={{ flex: 1, maxWidth: 500 }}
                     renderInput={(params) => (
                       <TextField
                         {...params}
@@ -660,9 +660,9 @@ export default function WorkOrderForm() {
                 </Stack>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12}>
                 <Stack direction="row" spacing={2} alignItems="center">
-                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 200 }}>
                     {t('workOrder.inspectionItem').toUpperCase()}
                   </Typography>
                   <Autocomplete
@@ -670,7 +670,7 @@ export default function WorkOrderForm() {
                     options={mockInspectionItems}
                     value={formData.inspectionItem || null}
                     onChange={(_, v) => handleChange('inspectionItem', v || '')}
-                    sx={{ flex: 1, maxWidth: 300 }}
+                    sx={{ flex: 1, maxWidth: 500 }}
                     renderInput={(params) => (
                       <TextField
                         {...params}
@@ -686,9 +686,9 @@ export default function WorkOrderForm() {
                 </Stack>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12}>
                 <Stack direction="row" spacing={2} alignItems="flex-start">
-                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140, pt: 1 }}>
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 200, pt: 1 }}>
                     {t('workOrder.inspectionType').toUpperCase()}
                   </Typography>
                   <Autocomplete
@@ -697,7 +697,7 @@ export default function WorkOrderForm() {
                     options={mockInspectionTypes}
                     value={formData.inspectionTypes}
                     onChange={(_, v) => handleChange('inspectionTypes', v)}
-                    sx={{ flex: 1, maxWidth: 300 }}
+                    sx={{ flex: 1, maxWidth: 500 }}
                     renderInput={(params) => (
                       <TextField {...params} placeholder={t('common.pleaseSelect')} />
                     )}
@@ -708,9 +708,9 @@ export default function WorkOrderForm() {
                 </Stack>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12}>
                 <Stack direction="row" spacing={2} alignItems="center">
-                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 200 }}>
                     {t('workOrder.supervisionLocation').toUpperCase()}
                   </Typography>
                   <Autocomplete
@@ -718,7 +718,7 @@ export default function WorkOrderForm() {
                     options={mockLocations}
                     value={formData.supervisionLocation || null}
                     onChange={(_, v) => handleChange('supervisionLocation', v || '')}
-                    sx={{ flex: 1, maxWidth: 300 }}
+                    sx={{ flex: 1, maxWidth: 500 }}
                     renderInput={(params) => (
                       <TextField {...params} placeholder={t('common.pleaseSelect')} />
                     )}
@@ -729,9 +729,9 @@ export default function WorkOrderForm() {
                 </Stack>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12}>
                 <Stack direction="row" spacing={2} alignItems="flex-start">
-                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140, pt: 1 }}>
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 200, pt: 1 }}>
                     {t('workOrder.inspectionPersonnel').toUpperCase()}
                   </Typography>
                   <Autocomplete
@@ -740,7 +740,7 @@ export default function WorkOrderForm() {
                     options={mockEmployees}
                     value={formData.inspectionPersonnel}
                     onChange={(_, v) => handleChange('inspectionPersonnel', v)}
-                    sx={{ flex: 1, maxWidth: 300 }}
+                    sx={{ flex: 1, maxWidth: 500 }}
                     renderInput={(params) => (
                       <TextField {...params} placeholder={t('common.pleaseSelect')} />
                     )}
@@ -751,9 +751,9 @@ export default function WorkOrderForm() {
                 </Stack>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12}>
                 <Stack direction="row" spacing={2} alignItems="center">
-                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 200 }}>
                     {t('workOrder.province').toUpperCase()}
                   </Typography>
                   <Autocomplete
@@ -761,7 +761,7 @@ export default function WorkOrderForm() {
                     options={mockProvinces}
                     value={formData.province || null}
                     onChange={(_, v) => handleProvinceChange(v || '')}
-                    sx={{ flex: 1, maxWidth: 250 }}
+                    sx={{ flex: 1, maxWidth: 400 }}
                     renderInput={(params) => (
                       <TextField {...params} placeholder={t('common.pleaseSelect')} />
                     )}
@@ -769,9 +769,9 @@ export default function WorkOrderForm() {
                 </Stack>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12}>
                 <Stack direction="row" spacing={2} alignItems="center">
-                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 200 }}>
                     {t('workOrder.district').toUpperCase()}
                   </Typography>
                   <Autocomplete
@@ -780,7 +780,7 @@ export default function WorkOrderForm() {
                     value={formData.district || null}
                     onChange={(_, v) => handleChange('district', v || '')}
                     disabled={!formData.province}
-                    sx={{ flex: 1, maxWidth: 250 }}
+                    sx={{ flex: 1, maxWidth: 400 }}
                     renderInput={(params) => (
                       <TextField
                         {...params}
