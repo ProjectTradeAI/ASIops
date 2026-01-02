@@ -55,10 +55,8 @@ export default function MainLayout() {
         <Box 
           sx={{ 
             flexGrow: 1, 
-            p: { xs: 2, sm: 3, md: 4 },
-            maxWidth: 1600,
+            p: { xs: 2, sm: 2.5, md: 3 },
             width: '100%',
-            mx: 'auto',
           }}
         >
           <Breadcrumbs />
