@@ -40,7 +40,7 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-const drawerWidth = 220;
+const drawerWidth = 200;
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const { t } = useTranslation();

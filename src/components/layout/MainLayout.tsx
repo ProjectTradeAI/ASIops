@@ -6,7 +6,7 @@ import Sidebar from './Sidebar';
 import Breadcrumbs from './Breadcrumbs';
 import Footer from './Footer';
 
-const drawerWidth = 220;
+const drawerWidth = 200;
 
 export default function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
