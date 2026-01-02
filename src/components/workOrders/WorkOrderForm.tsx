@@ -164,14 +164,21 @@ interface FormData {
   otherTasksDescription: string;
 }
 
+const currentYear = new Date().getFullYear().toString().slice(-2);
+
 const getNextFileNumber = (fileType: 'ASIC' | 'ASI' | 'FT'): number => {
+  const prefix = `${fileType}${currentYear}-`;
   const existingNumbers = mockWorkOrders
-    .filter(order => order.fileNumber.startsWith(fileType))
+    .filter(order => order.fileNumber.startsWith(prefix))
     .map(order => {
-      const match = order.fileNumber.match(/\d+$/);
-      return match ? parseInt(match[0], 10) : 0;
+      const match = order.fileNumber.match(/-(\d+)$/);
+      return match ? parseInt(match[1], 10) : 0;
     });
-  return Math.max(...existingNumbers, 0) + 1;
+  return existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
+};
+
+const formatFileNumber = (fileType: 'ASIC' | 'ASI' | 'FT', num: number): string => {
+  return `${fileType}${currentYear}-${String(num).padStart(4, '0')}`;
 };
 
 export default function WorkOrderForm() {
@@ -182,7 +189,7 @@ export default function WorkOrderForm() {
 
   const [formData, setFormData] = useState<FormData>({
     fileType: 'ASIC',
-    fileNumber: 26,
+    fileNumber: 1,
     status: 'created',
     openDate: new Date().toISOString().slice(0, 16),
     reportDate: '',
@@ -197,9 +204,9 @@ export default function WorkOrderForm() {
     shipName: '',
     inspectionArea: '',
     inspectionItem: '',
-    inspectionTypes: ['', '', '', '', ''],
+    inspectionTypes: [],
     supervisionLocation: '',
-    inspectionPersonnel: ['', '', '', '', ''],
+    inspectionPersonnel: [],
     province: '',
     district: '',
     selectedTasks: [],
@@ -217,8 +224,8 @@ export default function WorkOrderForm() {
       if (workOrder) {
         const fileType = workOrder.fileNumber.startsWith('ASIC') ? 'ASIC' : 
                         workOrder.fileNumber.startsWith('ASI') ? 'ASI' : 'FT';
-        const numberMatch = workOrder.fileNumber.match(/\d+$/);
-        const fileNumber = numberMatch ? parseInt(numberMatch[0], 10) : 0;
+        const numberMatch = workOrder.fileNumber.match(/-(\d+)$/);
+        const fileNumber = numberMatch ? parseInt(numberMatch[1], 10) : 1;
         
         setFormData({
           fileType,
@@ -237,9 +244,9 @@ export default function WorkOrderForm() {
           shipName: workOrder.shipName || '',
           inspectionArea: workOrder.inspectionArea,
           inspectionItem: workOrder.inspectionItem,
-          inspectionTypes: [workOrder.inspectionType, '', '', '', ''],
+          inspectionTypes: workOrder.inspectionType ? [workOrder.inspectionType] : [],
           supervisionLocation: workOrder.supervisionLocation,
-          inspectionPersonnel: workOrder.employees?.slice(0, 5) || ['', '', '', '', ''],
+          inspectionPersonnel: workOrder.employees || [],
           province: workOrder.province,
           district: workOrder.district,
           selectedTasks: [],
@@ -284,18 +291,6 @@ export default function WorkOrderForm() {
     }));
   };
 
-  const handleInspectionTypeChange = (index: number, value: string) => {
-    const newTypes = [...formData.inspectionTypes];
-    newTypes[index] = value;
-    setFormData((prev) => ({ ...prev, inspectionTypes: newTypes }));
-  };
-
-  const handlePersonnelChange = (index: number, value: string) => {
-    const newPersonnel = [...formData.inspectionPersonnel];
-    newPersonnel[index] = value;
-    setFormData((prev) => ({ ...prev, inspectionPersonnel: newPersonnel }));
-  };
-
   const openAddDialog = (field: string) => {
     setAddDialogField(field);
     setNewItemValue('');
@@ -303,7 +298,10 @@ export default function WorkOrderForm() {
   };
 
   const handleAddNewItem = () => {
-    console.log(`Adding new ${addDialogField}: ${newItemValue}`);
+    if (newItemValue.trim()) {
+      console.log(`Adding new ${addDialogField}: ${newItemValue}`);
+      alert(`Yeni kayıt eklendi: ${newItemValue} (Prototip - gerçek veri kaydedilmedi)`);
+    }
     setAddDialogOpen(false);
   };
 
@@ -326,6 +324,20 @@ export default function WorkOrderForm() {
         : 'Yeni iş emri oluşturuldu! (Prototip - gerçek veri kaydedilmedi)'
     );
     navigate('/work-orders');
+  };
+
+  const getDialogTitle = () => {
+    const titles: Record<string, string> = {
+      topic: t('workOrder.topic'),
+      company: t('workOrder.company'),
+      ship: t('workOrder.ship'),
+      inspectionArea: t('workOrder.inspectionArea'),
+      inspectionItem: t('workOrder.inspectionItem'),
+      inspectionType: t('workOrder.inspectionType'),
+      location: t('workOrder.supervisionLocation'),
+      personnel: t('workOrder.inspectionPersonnel'),
+    };
+    return `${t('common.add')} - ${titles[addDialogField] || ''}`;
   };
 
   return (
@@ -357,6 +369,7 @@ export default function WorkOrderForm() {
               exclusive
               onChange={handleFileTypeChange}
               size="small"
+              aria-label={t('workOrder.fileType')}
               sx={{
                 '& .MuiToggleButton-root': {
                   px: 3,
@@ -369,17 +382,20 @@ export default function WorkOrderForm() {
                 },
               }}
             >
-              <ToggleButton value="ASIC">
+              <ToggleButton value="ASIC" aria-label="ASIC">
                 <DescriptionIcon sx={{ mr: 1 }} /> ASIC
               </ToggleButton>
-              <ToggleButton value="ASI">
+              <ToggleButton value="ASI" aria-label="ASI">
                 <DescriptionIcon sx={{ mr: 1 }} /> ASI
               </ToggleButton>
+              <ToggleButton value="FT" aria-label="FT">
+                <DescriptionIcon sx={{ mr: 1 }} /> FT
+              </ToggleButton>
             </ToggleButtonGroup>
-            <Button variant="outlined" startIcon={<SearchIcon />}>
+            <Button variant="outlined" startIcon={<SearchIcon />} aria-label={t('common.search')}>
               {t('common.search')}
             </Button>
-            <Button variant="contained" color="error" startIcon={<AddIcon />}>
+            <Button variant="contained" color="error" startIcon={<AddIcon />} aria-label={t('common.add')}>
               {t('common.add')}
             </Button>
           </Stack>
@@ -396,477 +412,383 @@ export default function WorkOrderForm() {
           <Box sx={{ p: 3 }}>
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={4}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.fileNumber').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={4}>
-                    <TextField
-                      select
-                      fullWidth
-                      size="small"
-                      value={formData.fileType}
-                      onChange={(e) => handleChange('fileType', e.target.value)}
-                    >
-                      <MenuItem value="ASIC">ASIC</MenuItem>
-                      <MenuItem value="ASI">ASI</MenuItem>
-                      <MenuItem value="FT">FT</MenuItem>
-                    </TextField>
-                  </Grid>
-                  <Grid item xs={4}>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      value={formData.fileNumber}
-                      disabled
-                    />
-                  </Grid>
-                </Grid>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                    {t('workOrder.fileNumber').toUpperCase()}
+                  </Typography>
+                  <TextField
+                    select
+                    size="small"
+                    value={formData.fileType}
+                    onChange={(e) => {
+                      const newType = e.target.value as 'ASIC' | 'ASI' | 'FT';
+                      setFormData((prev) => ({
+                        ...prev,
+                        fileType: newType,
+                        fileNumber: getNextFileNumber(newType),
+                      }));
+                    }}
+                    sx={{ minWidth: 100 }}
+                    inputProps={{ 'aria-label': t('workOrder.fileType') }}
+                  >
+                    <MenuItem value="ASIC">ASIC</MenuItem>
+                    <MenuItem value="ASI">ASI</MenuItem>
+                    <MenuItem value="FT">FT</MenuItem>
+                  </TextField>
+                  <TextField
+                    size="small"
+                    value={formData.fileNumber}
+                    disabled
+                    sx={{ width: 80 }}
+                    inputProps={{ 'aria-label': t('workOrder.fileNumber') }}
+                  />
+                  <Typography variant="caption" color="text.secondary">
+                    ({formatFileNumber(formData.fileType, formData.fileNumber)}) - {t('common.autoGenerated')}
+                  </Typography>
+                </Stack>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={12}>
-                    <Typography variant="caption" color="text.secondary">
-                      {t('common.autoGenerated')}
-                    </Typography>
-                  </Grid>
-                </Grid>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                    {t('workOrder.openDate').toUpperCase()}
+                  </Typography>
+                  <TextField
+                    size="small"
+                    type="datetime-local"
+                    value={formData.openDate}
+                    disabled
+                    helperText={t('common.autoGenerated')}
+                    inputProps={{ 'aria-label': t('workOrder.openDate') }}
+                  />
+                </Stack>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={4}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.reportDate').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={8}>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      type="date"
-                      value={formData.reportDate}
-                      onChange={(e) => handleChange('reportDate', e.target.value)}
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  </Grid>
-                </Grid>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                    {t('workOrder.reportDate').toUpperCase()}
+                  </Typography>
+                  <TextField
+                    size="small"
+                    type="date"
+                    value={formData.reportDate}
+                    onChange={(e) => handleChange('reportDate', e.target.value)}
+                    InputLabelProps={{ shrink: true }}
+                    inputProps={{ 'aria-label': t('workOrder.reportDate') }}
+                  />
+                </Stack>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={4}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.openDate').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={8}>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      type="datetime-local"
-                      value={formData.openDate}
-                      disabled
-                    />
-                  </Grid>
-                </Grid>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                    {t('workOrder.responsible').toUpperCase()}
+                  </Typography>
+                  <Typography variant="body1">{formData.responsible}</Typography>
+                </Stack>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={4}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.inspectionDate').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={8}>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      type="date"
-                      value={formData.inspectionDate}
-                      onChange={(e) => handleChange('inspectionDate', e.target.value)}
-                    />
-                  </Grid>
-                </Grid>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                    {t('workOrder.inspectionDate').toUpperCase()}
+                  </Typography>
+                  <TextField
+                    size="small"
+                    type="date"
+                    value={formData.inspectionDate}
+                    onChange={(e) => handleChange('inspectionDate', e.target.value)}
+                    inputProps={{ 'aria-label': t('workOrder.inspectionDate') }}
+                  />
+                </Stack>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={4}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.dateRange').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={8}>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      type="date"
-                      value={formData.dateRangeEnd}
-                      onChange={(e) => handleChange('dateRangeEnd', e.target.value)}
-                    />
-                  </Grid>
-                </Grid>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                    {t('workOrder.dateRange').toUpperCase()}
+                  </Typography>
+                  <TextField
+                    size="small"
+                    type="date"
+                    value={formData.dateRangeEnd}
+                    onChange={(e) => handleChange('dateRangeEnd', e.target.value)}
+                    inputProps={{ 'aria-label': t('workOrder.dateRange') }}
+                  />
+                </Stack>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={4}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.invoiceNumber').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={8}>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      value={formData.invoiceNumber}
-                      onChange={(e) => handleChange('invoiceNumber', e.target.value)}
-                      helperText={t('workOrder.invoiceHint')}
-                    />
-                  </Grid>
-                </Grid>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                    {t('workOrder.invoiceNumber').toUpperCase()}
+                  </Typography>
+                  <TextField
+                    size="small"
+                    value={formData.invoiceNumber}
+                    onChange={(e) => handleChange('invoiceNumber', e.target.value)}
+                    helperText={t('workOrder.invoiceHint')}
+                    inputProps={{ 'aria-label': t('workOrder.invoiceNumber') }}
+                    sx={{ flex: 1, maxWidth: 300 }}
+                  />
+                </Stack>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={4}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.responsible').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={8}>
-                    <Typography variant="body1">{formData.responsible}</Typography>
-                  </Grid>
-                </Grid>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                    {t('workOrder.tonnage').toUpperCase()}
+                  </Typography>
+                  <TextField
+                    size="small"
+                    type="number"
+                    value={formData.tonnage}
+                    onChange={(e) => handleChange('tonnage', e.target.value)}
+                    inputProps={{ 'aria-label': t('workOrder.tonnage') }}
+                    sx={{ width: 150 }}
+                  />
+                </Stack>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={4}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.tonnage').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={8}>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      type="number"
-                      value={formData.tonnage}
-                      onChange={(e) => handleChange('tonnage', e.target.value)}
-                    />
-                  </Grid>
-                </Grid>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                    {t('workOrder.topic').toUpperCase()}
+                  </Typography>
+                  <Autocomplete
+                    size="small"
+                    options={mockTopics}
+                    value={formData.topic || null}
+                    onChange={(_, v) => handleChange('topic', v || '')}
+                    sx={{ flex: 1, maxWidth: 250 }}
+                    renderInput={(params) => (
+                      <TextField {...params} placeholder={t('common.pleaseSelect')} />
+                    )}
+                  />
+                  <Button size="small" startIcon={<AddIcon />} onClick={() => openAddDialog('topic')}>
+                    {t('common.add')}
+                  </Button>
+                </Stack>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={4}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.topic').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={5}>
-                    <Autocomplete
-                      size="small"
-                      options={mockTopics}
-                      value={formData.topic || null}
-                      onChange={(_, v) => handleChange('topic', v || '')}
-                      renderInput={(params) => (
-                        <TextField {...params} placeholder={t('common.pleaseSelect')} />
-                      )}
-                    />
-                  </Grid>
-                  <Grid item xs={3}>
-                    <Button size="small" startIcon={<AddIcon />} onClick={() => openAddDialog('topic')}>
-                      {t('common.add')}
-                    </Button>
-                    <TextField size="small" placeholder={t('common.addNewItem')} sx={{ ml: 1, width: 180 }} />
-                  </Grid>
-                </Grid>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                    {t('workOrder.customerRefNo').toUpperCase()}
+                  </Typography>
+                  <TextField
+                    size="small"
+                    value={formData.customerRefNo}
+                    onChange={(e) => handleChange('customerRefNo', e.target.value)}
+                    inputProps={{ 'aria-label': t('workOrder.customerRefNo') }}
+                    sx={{ flex: 1, maxWidth: 300 }}
+                  />
+                </Stack>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={4}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.company').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={5}>
-                    <Autocomplete
-                      size="small"
-                      options={mockCompanies}
-                      value={formData.companyName || null}
-                      onChange={(_, v) => handleChange('companyName', v || '')}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          placeholder={t('common.pleaseSelect')}
-                          error={Boolean(errors.companyName)}
-                          helperText={errors.companyName}
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid item xs={3}>
-                    <Button size="small" startIcon={<AddIcon />} onClick={() => openAddDialog('company')}>
-                      {t('common.add')}
-                    </Button>
-                    <TextField size="small" placeholder={t('common.addNewItem')} sx={{ ml: 1, width: 180 }} />
-                  </Grid>
-                </Grid>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                    {t('workOrder.company').toUpperCase()}
+                  </Typography>
+                  <Autocomplete
+                    size="small"
+                    options={mockCompanies}
+                    value={formData.companyName || null}
+                    onChange={(_, v) => handleChange('companyName', v || '')}
+                    sx={{ flex: 1, maxWidth: 300 }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        placeholder={t('common.pleaseSelect')}
+                        error={Boolean(errors.companyName)}
+                        helperText={errors.companyName}
+                      />
+                    )}
+                  />
+                  <Button size="small" startIcon={<AddIcon />} onClick={() => openAddDialog('company')}>
+                    {t('common.add')}
+                  </Button>
+                </Stack>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={4}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.customerRefNo').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={8}>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      value={formData.customerRefNo}
-                      onChange={(e) => handleChange('customerRefNo', e.target.value)}
-                    />
-                  </Grid>
-                </Grid>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                    {t('workOrder.ship').toUpperCase()}
+                  </Typography>
+                  <Autocomplete
+                    size="small"
+                    options={mockShips}
+                    value={formData.shipName || null}
+                    onChange={(_, v) => handleChange('shipName', v || '')}
+                    sx={{ flex: 1, maxWidth: 300 }}
+                    renderInput={(params) => (
+                      <TextField {...params} placeholder={t('common.pleaseSelect')} />
+                    )}
+                  />
+                  <Button size="small" startIcon={<AddIcon />} onClick={() => openAddDialog('ship')}>
+                    {t('common.add')}
+                  </Button>
+                </Stack>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={4}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.ship').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={5}>
-                    <Autocomplete
-                      size="small"
-                      options={mockShips}
-                      value={formData.shipName || null}
-                      onChange={(_, v) => handleChange('shipName', v || '')}
-                      renderInput={(params) => (
-                        <TextField {...params} placeholder={t('common.pleaseSelect')} />
-                      )}
-                    />
-                  </Grid>
-                  <Grid item xs={3}>
-                    <Button size="small" startIcon={<AddIcon />} onClick={() => openAddDialog('ship')}>
-                      {t('common.add')}
-                    </Button>
-                    <TextField size="small" placeholder={t('common.addNewItem')} sx={{ ml: 1, width: 180 }} />
-                  </Grid>
-                </Grid>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                    {t('workOrder.inspectionArea').toUpperCase()}
+                  </Typography>
+                  <Autocomplete
+                    size="small"
+                    options={mockInspectionAreas}
+                    value={formData.inspectionArea || null}
+                    onChange={(_, v) => handleChange('inspectionArea', v || '')}
+                    sx={{ flex: 1, maxWidth: 300 }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        placeholder={t('common.pleaseSelect')}
+                        error={Boolean(errors.inspectionArea)}
+                        helperText={errors.inspectionArea}
+                      />
+                    )}
+                  />
+                  <Button size="small" startIcon={<AddIcon />} onClick={() => openAddDialog('inspectionArea')}>
+                    {t('common.add')}
+                  </Button>
+                </Stack>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={4}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.inspectionArea').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={5}>
-                    <Autocomplete
-                      size="small"
-                      options={mockInspectionAreas}
-                      value={formData.inspectionArea || null}
-                      onChange={(_, v) => handleChange('inspectionArea', v || '')}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          placeholder={t('common.pleaseSelect')}
-                          error={Boolean(errors.inspectionArea)}
-                          helperText={errors.inspectionArea}
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid item xs={3}>
-                    <Button size="small" startIcon={<AddIcon />} onClick={() => openAddDialog('inspectionArea')}>
-                      {t('common.add')}
-                    </Button>
-                    <TextField size="small" placeholder={t('common.addNewItem')} sx={{ ml: 1, width: 180 }} />
-                  </Grid>
-                </Grid>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                    {t('workOrder.inspectionItem').toUpperCase()}
+                  </Typography>
+                  <Autocomplete
+                    size="small"
+                    options={mockInspectionItems}
+                    value={formData.inspectionItem || null}
+                    onChange={(_, v) => handleChange('inspectionItem', v || '')}
+                    sx={{ flex: 1, maxWidth: 300 }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        placeholder={t('common.pleaseSelect')}
+                        error={Boolean(errors.inspectionItem)}
+                        helperText={errors.inspectionItem}
+                      />
+                    )}
+                  />
+                  <Button size="small" startIcon={<AddIcon />} onClick={() => openAddDialog('inspectionItem')}>
+                    {t('common.add')}
+                  </Button>
+                </Stack>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={4}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.inspectionItem').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={5}>
-                    <Autocomplete
-                      size="small"
-                      options={mockInspectionItems}
-                      value={formData.inspectionItem || null}
-                      onChange={(_, v) => handleChange('inspectionItem', v || '')}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          placeholder={t('common.pleaseSelect')}
-                          error={Boolean(errors.inspectionItem)}
-                          helperText={errors.inspectionItem}
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid item xs={3}>
-                    <Button size="small" startIcon={<AddIcon />} onClick={() => openAddDialog('inspectionItem')}>
-                      {t('common.add')}
-                    </Button>
-                    <TextField size="small" placeholder={t('common.addNewItem')} sx={{ ml: 1, width: 180 }} />
-                  </Grid>
-                </Grid>
+                <Stack direction="row" spacing={2} alignItems="flex-start">
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140, pt: 1 }}>
+                    {t('workOrder.inspectionType').toUpperCase()}
+                  </Typography>
+                  <Autocomplete
+                    multiple
+                    size="small"
+                    options={mockInspectionTypes}
+                    value={formData.inspectionTypes}
+                    onChange={(_, v) => handleChange('inspectionTypes', v)}
+                    sx={{ flex: 1, maxWidth: 300 }}
+                    renderInput={(params) => (
+                      <TextField {...params} placeholder={t('common.pleaseSelect')} />
+                    )}
+                  />
+                  <Button size="small" startIcon={<AddIcon />} onClick={() => openAddDialog('inspectionType')}>
+                    {t('common.add')}
+                  </Button>
+                </Stack>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Grid container spacing={2} alignItems="flex-start">
-                  <Grid item xs={4}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.inspectionType').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={5}>
-                    <Stack spacing={1}>
-                      {formData.inspectionTypes.map((type, index) => (
-                        <Autocomplete
-                          key={index}
-                          size="small"
-                          options={mockInspectionTypes}
-                          value={type || null}
-                          onChange={(_, v) => handleInspectionTypeChange(index, v || '')}
-                          renderInput={(params) => (
-                            <TextField {...params} placeholder={t('common.pleaseSelect')} />
-                          )}
-                        />
-                      ))}
-                    </Stack>
-                  </Grid>
-                  <Grid item xs={3}>
-                    <Button size="small" startIcon={<AddIcon />} onClick={() => openAddDialog('inspectionType')}>
-                      {t('common.add')}
-                    </Button>
-                    <TextField size="small" placeholder={t('common.addNewItem')} sx={{ ml: 1, width: 180 }} />
-                  </Grid>
-                </Grid>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                    {t('workOrder.supervisionLocation').toUpperCase()}
+                  </Typography>
+                  <Autocomplete
+                    size="small"
+                    options={mockLocations}
+                    value={formData.supervisionLocation || null}
+                    onChange={(_, v) => handleChange('supervisionLocation', v || '')}
+                    sx={{ flex: 1, maxWidth: 300 }}
+                    renderInput={(params) => (
+                      <TextField {...params} placeholder={t('common.pleaseSelect')} />
+                    )}
+                  />
+                  <Button size="small" startIcon={<AddIcon />} onClick={() => openAddDialog('location')}>
+                    {t('common.add')}
+                  </Button>
+                </Stack>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={4}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.supervisionLocation').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={5}>
-                    <Autocomplete
-                      size="small"
-                      options={mockLocations}
-                      value={formData.supervisionLocation || null}
-                      onChange={(_, v) => handleChange('supervisionLocation', v || '')}
-                      renderInput={(params) => (
-                        <TextField {...params} placeholder={t('common.pleaseSelect')} />
-                      )}
-                    />
-                  </Grid>
-                  <Grid item xs={3}>
-                    <Button size="small" startIcon={<AddIcon />} onClick={() => openAddDialog('location')}>
-                      {t('common.add')}
-                    </Button>
-                    <TextField size="small" placeholder={t('common.addNewItem')} sx={{ ml: 1, width: 180 }} />
-                  </Grid>
-                </Grid>
+                <Stack direction="row" spacing={2} alignItems="flex-start">
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140, pt: 1 }}>
+                    {t('workOrder.inspectionPersonnel').toUpperCase()}
+                  </Typography>
+                  <Autocomplete
+                    multiple
+                    size="small"
+                    options={mockEmployees}
+                    value={formData.inspectionPersonnel}
+                    onChange={(_, v) => handleChange('inspectionPersonnel', v)}
+                    sx={{ flex: 1, maxWidth: 300 }}
+                    renderInput={(params) => (
+                      <TextField {...params} placeholder={t('common.pleaseSelect')} />
+                    )}
+                  />
+                  <Button size="small" startIcon={<AddIcon />} onClick={() => openAddDialog('personnel')}>
+                    {t('common.add')}
+                  </Button>
+                </Stack>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Grid container spacing={2} alignItems="flex-start">
-                  <Grid item xs={4}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.inspectionPersonnel').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={5}>
-                    <Stack spacing={1}>
-                      {formData.inspectionPersonnel.map((person, index) => (
-                        <Autocomplete
-                          key={index}
-                          size="small"
-                          options={mockEmployees}
-                          value={person || null}
-                          onChange={(_, v) => handlePersonnelChange(index, v || '')}
-                          renderInput={(params) => (
-                            <TextField {...params} placeholder={t('common.pleaseSelect')} />
-                          )}
-                        />
-                      ))}
-                    </Stack>
-                  </Grid>
-                  <Grid item xs={3}>
-                    <Button size="small" startIcon={<AddIcon />} onClick={() => openAddDialog('personnel')}>
-                      {t('common.add')}
-                    </Button>
-                    <TextField size="small" placeholder={t('common.addNewItem')} sx={{ ml: 1, width: 180 }} />
-                  </Grid>
-                </Grid>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                    {t('workOrder.province').toUpperCase()}
+                  </Typography>
+                  <Autocomplete
+                    size="small"
+                    options={mockProvinces}
+                    value={formData.province || null}
+                    onChange={(_, v) => handleProvinceChange(v || '')}
+                    sx={{ flex: 1, maxWidth: 250 }}
+                    renderInput={(params) => (
+                      <TextField {...params} placeholder={t('common.pleaseSelect')} />
+                    )}
+                  />
+                </Stack>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={4}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.province').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={8}>
-                    <Autocomplete
-                      size="small"
-                      options={mockProvinces}
-                      value={formData.province || null}
-                      onChange={(_, v) => handleProvinceChange(v || '')}
-                      renderInput={(params) => (
-                        <TextField {...params} placeholder={t('common.pleaseSelect')} />
-                      )}
-                    />
-                  </Grid>
-                </Grid>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={4}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.district').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={8}>
-                    <Autocomplete
-                      size="small"
-                      options={formData.province ? (districtsByProvince[formData.province] || []) : []}
-                      value={formData.district || null}
-                      onChange={(_, v) => handleChange('district', v || '')}
-                      disabled={!formData.province}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          placeholder={formData.province ? t('common.pleaseSelect') : t('common.selectFirstProvince')}
-                        />
-                      )}
-                    />
-                  </Grid>
-                </Grid>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                    {t('workOrder.district').toUpperCase()}
+                  </Typography>
+                  <Autocomplete
+                    size="small"
+                    options={formData.province ? (districtsByProvince[formData.province] || []) : []}
+                    value={formData.district || null}
+                    onChange={(_, v) => handleChange('district', v || '')}
+                    disabled={!formData.province}
+                    sx={{ flex: 1, maxWidth: 250 }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        placeholder={formData.province ? t('common.pleaseSelect') : t('common.selectFirstProvince')}
+                      />
+                    )}
+                  />
+                </Stack>
               </Grid>
 
               <Grid item xs={12}>
@@ -874,52 +796,45 @@ export default function WorkOrderForm() {
               </Grid>
 
               <Grid item xs={12}>
-                <Grid container spacing={2} alignItems="flex-start">
-                  <Grid item xs={12} md={2}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.tasksToPerform').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12} md={10}>
-                    <FormGroup row>
-                      <Grid container spacing={1}>
-                        {taskOptions.map((task) => (
-                          <Grid item xs={6} sm={4} md={3} key={task.key}>
-                            <FormControlLabel
-                              control={
-                                <Checkbox
-                                  size="small"
-                                  checked={formData.selectedTasks.includes(task.key)}
-                                  onChange={() => handleTaskToggle(task.key)}
-                                />
-                              }
-                              label={<Typography variant="body2">{task.label}</Typography>}
-                            />
-                          </Grid>
-                        ))}
-                      </Grid>
-                    </FormGroup>
-                  </Grid>
-                </Grid>
+                <Stack spacing={2}>
+                  <Typography variant="body2" fontWeight={600} color="primary">
+                    {t('workOrder.tasksToPerform').toUpperCase()}
+                  </Typography>
+                  <FormGroup>
+                    <Grid container spacing={1}>
+                      {taskOptions.map((task) => (
+                        <Grid item xs={6} sm={4} md={3} key={task.key}>
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                size="small"
+                                checked={formData.selectedTasks.includes(task.key)}
+                                onChange={() => handleTaskToggle(task.key)}
+                              />
+                            }
+                            label={<Typography variant="body2">{task.label}</Typography>}
+                          />
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </FormGroup>
+                </Stack>
               </Grid>
 
               <Grid item xs={12}>
-                <Grid container spacing={2} alignItems="flex-start">
-                  <Grid item xs={12} md={2}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.otherTasksDescription').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12} md={10}>
-                    <TextField
-                      fullWidth
-                      multiline
-                      rows={4}
-                      value={formData.otherTasksDescription}
-                      onChange={(e) => handleChange('otherTasksDescription', e.target.value)}
-                    />
-                  </Grid>
-                </Grid>
+                <Stack spacing={2}>
+                  <Typography variant="body2" fontWeight={600} color="primary">
+                    {t('workOrder.otherTasksDescription').toUpperCase()}
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={4}
+                    value={formData.otherTasksDescription}
+                    onChange={(e) => handleChange('otherTasksDescription', e.target.value)}
+                    inputProps={{ 'aria-label': t('workOrder.otherTasksDescription') }}
+                  />
+                </Stack>
               </Grid>
 
               <Grid item xs={12}>
@@ -927,31 +842,31 @@ export default function WorkOrderForm() {
               </Grid>
 
               <Grid item xs={12}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={12} md={2}>
-                    <Typography variant="body2" fontWeight={600} color="primary">
-                      {t('workOrder.operation').toUpperCase()}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12} md={10}>
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      size="large"
-                      sx={{ minWidth: 200 }}
-                    >
-                      {t('common.submit')}
-                    </Button>
-                  </Grid>
-                </Grid>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
+                    {t('workOrder.operation').toUpperCase()}
+                  </Typography>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    size="large"
+                    sx={{ minWidth: 200 }}
+                  >
+                    {t('common.submit')}
+                  </Button>
+                </Stack>
               </Grid>
             </Grid>
           </Box>
         </form>
       </Paper>
 
-      <Dialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)}>
-        <DialogTitle>{t('common.addNewItem')}</DialogTitle>
+      <Dialog 
+        open={addDialogOpen} 
+        onClose={() => setAddDialogOpen(false)}
+        aria-labelledby="add-dialog-title"
+      >
+        <DialogTitle id="add-dialog-title">{getDialogTitle()}</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -959,12 +874,15 @@ export default function WorkOrderForm() {
             fullWidth
             value={newItemValue}
             onChange={(e) => setNewItemValue(e.target.value)}
-            placeholder={t('common.addNewItem')}
+            label={t('common.addNewItem')}
+            inputProps={{ 'aria-label': t('common.addNewItem') }}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setAddDialogOpen(false)}>{t('common.cancel')}</Button>
-          <Button onClick={handleAddNewItem} variant="contained">{t('common.add')}</Button>
+          <Button onClick={handleAddNewItem} variant="contained" disabled={!newItemValue.trim()}>
+            {t('common.add')}
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>
