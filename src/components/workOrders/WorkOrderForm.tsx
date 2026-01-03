@@ -965,7 +965,7 @@ export default function WorkOrderForm() {
         sx={{
           position: 'fixed',
           bottom: 24,
-          right: 24,
+          right: 48,
           zIndex: 1000,
         }}
       >
