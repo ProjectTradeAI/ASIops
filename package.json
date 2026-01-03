@@ -5,7 +5,9 @@
   "type": "module",
   "description": "ASI Operations Tracker - Phase 0 Prototype",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "client": "vite",
+    "server": "tsx server/index.ts",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
@@ -15,14 +17,22 @@
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^5.14.19",
     "@mui/material": "^5.14.20",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
     "@types/node": "^25.0.3",
+    "@types/pg": "^8.16.0",
+    "concurrently": "^9.2.1",
+    "cors": "^2.8.5",
     "date-fns": "^2.30.0",
+    "express": "^5.2.1",
     "i18next": "^23.7.8",
+    "pg": "^8.16.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-i18next": "^13.5.0",
     "react-router-dom": "^6.20.0",
-    "recharts": "^2.10.3"
+    "recharts": "^2.10.3",
+    "tsx": "^4.21.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

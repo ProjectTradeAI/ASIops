@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -21,6 +21,8 @@ import {
   DialogActions,
   ToggleButtonGroup,
   ToggleButton,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -29,95 +31,7 @@ import {
   Description as DescriptionIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import mockWorkOrders from '../../data/mockWorkOrders.json';
-
-const mockCompanies = [
-  'ORUA GENERAL TRADING',
-  'AVEKS İÇ VE DIŞ TİCARET A.Ş.',
-  'KAPTAN DEMİR ÇELİK END. VE TİCARET A.Ş.',
-  'POLİMETAL MADENCİLİK SAN. VE TİC. A.Ş.',
-  'CRESCO COMMODITIES',
-];
-
-const mockShips = [
-  'ANGORA 4',
-  'BONITA',
-  'CAPTAIN OMAR',
-  'OCEAN CENTURY',
-  'BLUE FISH',
-];
-
-const mockEmployees = [
-  'Tolga Ülcin',
-  'Zafer Turan',
-  'İmam Ok',
-  'Zeki Erdem',
-  'Okan Çalışkan',
-  'Servet Çakır',
-  'Altan Gungormus',
-];
-
-const mockInspectionAreas = [
-  'KÖMÜR',
-  'AĞI METALLER VE AĞI METALLERDEN EŞYA',
-  'KIYMETLI METALLER',
-];
-
-const mockInspectionItems = [
-  'KÖMÜR',
-  'PİK DEMİR',
-  'ÇELİK HURDASI',
-  'GÜMÜŞ KİLÇE',
-  'HBI',
-];
-
-const mockInspectionTypes = [
-  'DRAFT SURVEY',
-  'TARTIMA VE NUMUNE ALMAYA NEZARET',
-  'MALZEME HASAR GÖZETİMİ',
-  'STOK GÖZETİMİ',
-];
-
-const mockLocations = [
-  'ERDEMİR LİMANI',
-  'ALİAĞA',
-  'MARTAŞ',
-  'NADİR METAL RAFİNERİSİ',
-  'GÜRCİSTAN',
-];
-
-const mockTopics = [
-  'İHRACAT',
-  'İTHALAT',
-  'YURTİÇİ',
-  'DEPOLAMA',
-];
-
-const mockProvinces = [
-  'İstanbul',
-  'İzmir',
-  'Ankara',
-  'Zonguldak',
-  'Tekirdağ',
-  'Kocaeli',
-  'Bursa',
-  'Mersin',
-  'Hatay',
-  'Samsun',
-];
-
-const districtsByProvince: Record<string, string[]> = {
-  'İstanbul': ['Kadıköy', 'Beşiktaş', 'Şişli', 'Üsküdar', 'Beyoğlu', 'Fatih', 'Kartal', 'Pendik'],
-  'İzmir': ['Konak', 'Karşıyaka', 'Bornova', 'Aliağa', 'Çiğli', 'Gaziemir'],
-  'Ankara': ['Çankaya', 'Keçiören', 'Mamak', 'Yenimahalle', 'Etimesgut'],
-  'Zonguldak': ['Merkez', 'Ereğli', 'Çaycuma', 'Devrek', 'Alaplı'],
-  'Tekirdağ': ['Çorlu', 'Çerkezköy', 'Süleymanpaşa', 'Ergene', 'Malkara'],
-  'Kocaeli': ['İzmit', 'Gebze', 'Darıca', 'Körfez', 'Gölcük'],
-  'Bursa': ['Nilüfer', 'Osmangazi', 'Yıldırım', 'Mudanya', 'Gemlik'],
-  'Mersin': ['Akdeniz', 'Mezitli', 'Toroslar', 'Yenişehir', 'Tarsus'],
-  'Hatay': ['Antakya', 'İskenderun', 'Dörtyol', 'Samandağ'],
-  'Samsun': ['İlkadım', 'Atakum', 'Canik', 'Tekkeköy'],
-};
+import { api, Company, Employee, Ship, LookupItem, Province, District } from '../../services/api';
 
 const taskOptions = [
   { key: 'countBag', label: 'Adet/Bağ Sayımı' },
@@ -149,33 +63,22 @@ interface FormData {
   invoiceNumber: string;
   responsible: string;
   tonnage: string;
-  topic: string;
-  companyName: string;
+  topicId: number | null;
+  companyId: number | null;
   customerRefNo: string;
-  shipName: string;
-  inspectionArea: string;
-  inspectionItem: string;
-  inspectionTypes: string[];
-  supervisionLocation: string;
-  inspectionPersonnel: string[];
-  province: string;
-  district: string;
+  shipId: number | null;
+  inspectionAreaId: number | null;
+  inspectionItemId: number | null;
+  inspectionTypeIds: number[];
+  supervisionLocationId: number | null;
+  personnelIds: number[];
+  provinceId: number | null;
+  districtId: number | null;
   selectedTasks: string[];
   otherTasksDescription: string;
 }
 
 const currentYear = new Date().getFullYear().toString().slice(-2);
-
-const getNextFileNumber = (fileType: 'ASIC' | 'ASI' | 'FT'): number => {
-  const prefix = `${fileType}${currentYear}-`;
-  const existingNumbers = mockWorkOrders
-    .filter(order => order.fileNumber.startsWith(prefix))
-    .map(order => {
-      const match = order.fileNumber.match(/-(\d+)$/);
-      return match ? parseInt(match[1], 10) : 0;
-    });
-  return existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
-};
 
 const formatFileNumber = (fileType: 'ASIC' | 'ASI' | 'FT', num: number): string => {
   return `${fileType}${currentYear}-${String(num).padStart(4, '0')}`;
@@ -198,88 +101,137 @@ export default function WorkOrderForm() {
     invoiceNumber: '',
     responsible: 'Leyla',
     tonnage: '',
-    topic: '',
-    companyName: '',
+    topicId: null,
+    companyId: null,
     customerRefNo: '',
-    shipName: '',
-    inspectionArea: '',
-    inspectionItem: '',
-    inspectionTypes: [],
-    supervisionLocation: '',
-    inspectionPersonnel: [],
-    province: '',
-    district: '',
+    shipId: null,
+    inspectionAreaId: null,
+    inspectionItemId: null,
+    inspectionTypeIds: [],
+    supervisionLocationId: null,
+    personnelIds: [],
+    provinceId: null,
+    districtId: null,
     selectedTasks: [],
     otherTasksDescription: '',
   });
 
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [ships, setShips] = useState<Ship[]>([]);
+  const [inspectionAreas, setInspectionAreas] = useState<LookupItem[]>([]);
+  const [inspectionItems, setInspectionItems] = useState<LookupItem[]>([]);
+  const [inspectionTypes, setInspectionTypes] = useState<LookupItem[]>([]);
+  const [locations, setLocations] = useState<LookupItem[]>([]);
+  const [topics, setTopics] = useState<LookupItem[]>([]);
+  const [provinces, setProvinces] = useState<Province[]>([]);
+  const [districts, setDistricts] = useState<District[]>([]);
+
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addDialogField, setAddDialogField] = useState('');
   const [newItemValue, setNewItemValue] = useState('');
 
-  useEffect(() => {
-    if (isEditMode && id) {
-      const workOrder = mockWorkOrders.find((order) => order.id === Number(id));
-      if (workOrder) {
-        const fileType = workOrder.fileNumber.startsWith('ASIC') ? 'ASIC' : 
-                        workOrder.fileNumber.startsWith('ASI') ? 'ASI' : 'FT';
-        const numberMatch = workOrder.fileNumber.match(/-(\d+)$/);
-        const fileNumber = numberMatch ? parseInt(numberMatch[1], 10) : 1;
-        
-        setFormData({
-          fileType,
-          fileNumber,
-          status: workOrder.status,
-          openDate: new Date().toISOString().slice(0, 16),
-          reportDate: workOrder.reportDate || '',
-          inspectionDate: workOrder.inspectionDateStart || '',
-          dateRangeEnd: workOrder.inspectionDateEnd || '',
-          invoiceNumber: workOrder.invoiceNumber || '',
-          responsible: 'Leyla',
-          tonnage: workOrder.tonnage?.toString() || '',
-          topic: '',
-          companyName: workOrder.companyName,
-          customerRefNo: '',
-          shipName: workOrder.shipName || '',
-          inspectionArea: workOrder.inspectionArea,
-          inspectionItem: workOrder.inspectionItem,
-          inspectionTypes: workOrder.inspectionType ? [workOrder.inspectionType] : [],
-          supervisionLocation: workOrder.supervisionLocation,
-          inspectionPersonnel: workOrder.employees || [],
-          province: workOrder.province,
-          district: workOrder.district,
-          selectedTasks: [],
-          otherTasksDescription: '',
-        });
-      }
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        fileNumber: getNextFileNumber(prev.fileType),
-      }));
+  const loadNextFileNumber = useCallback(async (fileType: 'ASIC' | 'ASI' | 'FT') => {
+    try {
+      const result = await api.workOrders.getNextNumber(fileType);
+      return result.nextNumber;
+    } catch (err) {
+      console.error('Error loading next file number:', err);
+      return 1;
     }
-  }, [id, isEditMode]);
+  }, []);
 
-  const handleFileTypeChange = (_: React.MouseEvent<HTMLElement>, newType: 'ASIC' | 'ASI' | 'FT' | null) => {
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [
+          companiesData,
+          employeesData,
+          shipsData,
+          areasData,
+          itemsData,
+          typesData,
+          locationsData,
+          topicsData,
+          provincesData,
+        ] = await Promise.all([
+          api.companies.getAll(),
+          api.employees.getAll(),
+          api.ships.getAll(),
+          api.inspectionAreas.getAll(),
+          api.inspectionItems.getAll(),
+          api.inspectionTypes.getAll(),
+          api.locations.getAll(),
+          api.topics.getAll(),
+          api.provinces.getAll(),
+        ]);
+
+        setCompanies(companiesData);
+        setEmployees(employeesData);
+        setShips(shipsData);
+        setInspectionAreas(areasData);
+        setInspectionItems(itemsData);
+        setInspectionTypes(typesData);
+        setLocations(locationsData);
+        setTopics(topicsData);
+        setProvinces(provincesData);
+
+        if (!isEditMode) {
+          const nextNumber = await loadNextFileNumber('ASIC');
+          setFormData((prev) => ({ ...prev, fileNumber: nextNumber }));
+        }
+      } catch (err) {
+        console.error('Error loading form data:', err);
+        setError('Veriler yüklenirken hata oluştu');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [isEditMode, loadNextFileNumber]);
+
+  useEffect(() => {
+    const loadDistricts = async () => {
+      if (formData.provinceId) {
+        try {
+          const districtsData = await api.districts.getByProvince(formData.provinceId);
+          setDistricts(districtsData);
+        } catch (err) {
+          console.error('Error loading districts:', err);
+        }
+      } else {
+        setDistricts([]);
+      }
+    };
+    loadDistricts();
+  }, [formData.provinceId]);
+
+  const handleFileTypeChange = async (_: React.MouseEvent<HTMLElement>, newType: 'ASIC' | 'ASI' | 'FT' | null) => {
     if (newType) {
+      const nextNumber = await loadNextFileNumber(newType);
       setFormData((prev) => ({
         ...prev,
         fileType: newType,
-        fileNumber: getNextFileNumber(newType),
+        fileNumber: nextNumber,
       }));
     }
   };
 
-  const handleChange = (field: keyof FormData, value: string | string[] | number) => {
+  const handleChange = (field: keyof FormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: '' }));
     }
   };
 
-  const handleProvinceChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, province: value, district: '' }));
+  const handleProvinceChange = (provinceId: number | null) => {
+    setFormData((prev) => ({ ...prev, provinceId, districtId: null }));
   };
 
   const handleTaskToggle = (taskKey: string) => {
@@ -297,34 +249,119 @@ export default function WorkOrderForm() {
     setAddDialogOpen(true);
   };
 
-  const handleAddNewItem = () => {
-    if (newItemValue.trim()) {
-      console.log(`Adding new ${addDialogField}: ${newItemValue}`);
-      alert(`Yeni kayıt eklendi: ${newItemValue} (Prototip - gerçek veri kaydedilmedi)`);
+  const handleAddNewItem = async () => {
+    if (!newItemValue.trim()) {
+      setAddDialogOpen(false);
+      return;
+    }
+
+    try {
+      switch (addDialogField) {
+        case 'topic':
+          const newTopic = await api.topics.create(newItemValue);
+          setTopics((prev) => [...prev, newTopic]);
+          break;
+        case 'company':
+          const newCompany = await api.companies.create({ company_name: newItemValue });
+          setCompanies((prev) => [...prev, newCompany]);
+          break;
+        case 'ship':
+          const newShip = await api.ships.create({ ship_name: newItemValue });
+          setShips((prev) => [...prev, newShip]);
+          break;
+        case 'inspectionArea':
+          const newArea = await api.inspectionAreas.create(newItemValue);
+          setInspectionAreas((prev) => [...prev, newArea]);
+          break;
+        case 'inspectionItem':
+          const newItem = await api.inspectionItems.create(newItemValue);
+          setInspectionItems((prev) => [...prev, newItem]);
+          break;
+        case 'inspectionType':
+          const newType = await api.inspectionTypes.create(newItemValue);
+          setInspectionTypes((prev) => [...prev, newType]);
+          break;
+        case 'location':
+          const newLocation = await api.locations.create(newItemValue);
+          setLocations((prev) => [...prev, newLocation]);
+          break;
+        case 'personnel':
+          const newEmployee = await api.employees.create({ full_name: newItemValue });
+          setEmployees((prev) => [...prev, newEmployee]);
+          break;
+      }
+      alert(`Yeni kayıt eklendi: ${newItemValue}`);
+    } catch (err) {
+      console.error('Error adding new item:', err);
+      alert('Kayıt eklenirken hata oluştu');
     }
     setAddDialogOpen(false);
   };
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!formData.companyName) newErrors.companyName = t('validation.required');
-    if (!formData.inspectionArea) newErrors.inspectionArea = t('validation.required');
-    if (!formData.inspectionItem) newErrors.inspectionItem = t('validation.required');
+    if (!formData.companyId) newErrors.companyId = t('validation.required');
+    if (!formData.inspectionAreaId) newErrors.inspectionAreaId = t('validation.required');
+    if (!formData.inspectionItemId) newErrors.inspectionItemId = t('validation.required');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-    console.log('Submitting work order:', formData);
-    alert(
-      isEditMode
-        ? 'İş emri güncellendi! (Prototip - gerçek veri kaydedilmedi)'
-        : 'Yeni iş emri oluşturuldu! (Prototip - gerçek veri kaydedilmedi)'
-    );
-    navigate('/work-orders');
+
+    setSubmitting(true);
+    try {
+      await api.workOrders.create({
+        file_type: formData.fileType,
+        file_number: formData.fileNumber,
+        status: formData.status,
+        report_date: formData.reportDate || null,
+        inspection_date: formData.inspectionDate || null,
+        date_range_end: formData.dateRangeEnd || null,
+        invoice_number: formData.invoiceNumber,
+        responsible: formData.responsible,
+        tonnage: formData.tonnage ? parseFloat(formData.tonnage) : null,
+        topic_id: formData.topicId,
+        company_id: formData.companyId,
+        customer_ref_no: formData.customerRefNo,
+        ship_id: formData.shipId,
+        inspection_area_id: formData.inspectionAreaId,
+        inspection_item_id: formData.inspectionItemId,
+        supervision_location_id: formData.supervisionLocationId,
+        province_id: formData.provinceId,
+        district_id: formData.districtId,
+        other_tasks_description: formData.otherTasksDescription,
+        inspection_type_ids: formData.inspectionTypeIds,
+        personnel_ids: formData.personnelIds,
+        selected_tasks: formData.selectedTasks,
+      });
+      alert(isEditMode ? 'İş emri güncellendi!' : 'Yeni iş emri oluşturuldu!');
+      navigate('/work-orders');
+    } catch (err) {
+      console.error('Error submitting work order:', err);
+      alert('İş emri kaydedilirken hata oluştu');
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
 
   const getDialogTitle = () => {
     const titles: Record<string, string> = {
@@ -420,12 +457,13 @@ export default function WorkOrderForm() {
                     select
                     size="small"
                     value={formData.fileType}
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const newType = e.target.value as 'ASIC' | 'ASI' | 'FT';
+                      const nextNumber = await loadNextFileNumber(newType);
                       setFormData((prev) => ({
                         ...prev,
                         fileType: newType,
-                        fileNumber: getNextFileNumber(newType),
+                        fileNumber: nextNumber,
                       }));
                     }}
                     sx={{ minWidth: 100 }}
@@ -558,9 +596,10 @@ export default function WorkOrderForm() {
                   </Typography>
                   <Autocomplete
                     size="small"
-                    options={mockTopics}
-                    value={formData.topic || null}
-                    onChange={(_, v) => handleChange('topic', v || '')}
+                    options={topics}
+                    getOptionLabel={(option) => option.name}
+                    value={topics.find((t) => t.id === formData.topicId) || null}
+                    onChange={(_, v) => handleChange('topicId', v?.id || null)}
                     sx={{ flex: 1, maxWidth: 400 }}
                     renderInput={(params) => (
                       <TextField {...params} placeholder={t('common.pleaseSelect')} />
@@ -594,16 +633,17 @@ export default function WorkOrderForm() {
                   </Typography>
                   <Autocomplete
                     size="small"
-                    options={mockCompanies}
-                    value={formData.companyName || null}
-                    onChange={(_, v) => handleChange('companyName', v || '')}
+                    options={companies}
+                    getOptionLabel={(option) => option.company_name}
+                    value={companies.find((c) => c.id === formData.companyId) || null}
+                    onChange={(_, v) => handleChange('companyId', v?.id || null)}
                     sx={{ flex: 1, maxWidth: 500 }}
                     renderInput={(params) => (
                       <TextField
                         {...params}
                         placeholder={t('common.pleaseSelect')}
-                        error={Boolean(errors.companyName)}
-                        helperText={errors.companyName}
+                        error={Boolean(errors.companyId)}
+                        helperText={errors.companyId}
                       />
                     )}
                   />
@@ -620,9 +660,10 @@ export default function WorkOrderForm() {
                   </Typography>
                   <Autocomplete
                     size="small"
-                    options={mockShips}
-                    value={formData.shipName || null}
-                    onChange={(_, v) => handleChange('shipName', v || '')}
+                    options={ships}
+                    getOptionLabel={(option) => option.ship_name}
+                    value={ships.find((s) => s.id === formData.shipId) || null}
+                    onChange={(_, v) => handleChange('shipId', v?.id || null)}
                     sx={{ flex: 1, maxWidth: 500 }}
                     renderInput={(params) => (
                       <TextField {...params} placeholder={t('common.pleaseSelect')} />
@@ -641,16 +682,17 @@ export default function WorkOrderForm() {
                   </Typography>
                   <Autocomplete
                     size="small"
-                    options={mockInspectionAreas}
-                    value={formData.inspectionArea || null}
-                    onChange={(_, v) => handleChange('inspectionArea', v || '')}
+                    options={inspectionAreas}
+                    getOptionLabel={(option) => option.name}
+                    value={inspectionAreas.find((a) => a.id === formData.inspectionAreaId) || null}
+                    onChange={(_, v) => handleChange('inspectionAreaId', v?.id || null)}
                     sx={{ flex: 1, maxWidth: 500 }}
                     renderInput={(params) => (
                       <TextField
                         {...params}
                         placeholder={t('common.pleaseSelect')}
-                        error={Boolean(errors.inspectionArea)}
-                        helperText={errors.inspectionArea}
+                        error={Boolean(errors.inspectionAreaId)}
+                        helperText={errors.inspectionAreaId}
                       />
                     )}
                   />
@@ -667,16 +709,17 @@ export default function WorkOrderForm() {
                   </Typography>
                   <Autocomplete
                     size="small"
-                    options={mockInspectionItems}
-                    value={formData.inspectionItem || null}
-                    onChange={(_, v) => handleChange('inspectionItem', v || '')}
+                    options={inspectionItems}
+                    getOptionLabel={(option) => option.name}
+                    value={inspectionItems.find((i) => i.id === formData.inspectionItemId) || null}
+                    onChange={(_, v) => handleChange('inspectionItemId', v?.id || null)}
                     sx={{ flex: 1, maxWidth: 500 }}
                     renderInput={(params) => (
                       <TextField
                         {...params}
                         placeholder={t('common.pleaseSelect')}
-                        error={Boolean(errors.inspectionItem)}
-                        helperText={errors.inspectionItem}
+                        error={Boolean(errors.inspectionItemId)}
+                        helperText={errors.inspectionItemId}
                       />
                     )}
                   />
@@ -694,9 +737,10 @@ export default function WorkOrderForm() {
                   <Autocomplete
                     multiple
                     size="small"
-                    options={mockInspectionTypes}
-                    value={formData.inspectionTypes}
-                    onChange={(_, v) => handleChange('inspectionTypes', v)}
+                    options={inspectionTypes}
+                    getOptionLabel={(option) => option.name}
+                    value={inspectionTypes.filter((t) => formData.inspectionTypeIds.includes(t.id))}
+                    onChange={(_, v) => handleChange('inspectionTypeIds', v.map((item) => item.id))}
                     sx={{ flex: 1, maxWidth: 500 }}
                     renderInput={(params) => (
                       <TextField {...params} placeholder={t('common.pleaseSelect')} />
@@ -715,9 +759,10 @@ export default function WorkOrderForm() {
                   </Typography>
                   <Autocomplete
                     size="small"
-                    options={mockLocations}
-                    value={formData.supervisionLocation || null}
-                    onChange={(_, v) => handleChange('supervisionLocation', v || '')}
+                    options={locations}
+                    getOptionLabel={(option) => option.name}
+                    value={locations.find((l) => l.id === formData.supervisionLocationId) || null}
+                    onChange={(_, v) => handleChange('supervisionLocationId', v?.id || null)}
                     sx={{ flex: 1, maxWidth: 500 }}
                     renderInput={(params) => (
                       <TextField {...params} placeholder={t('common.pleaseSelect')} />
@@ -737,9 +782,10 @@ export default function WorkOrderForm() {
                   <Autocomplete
                     multiple
                     size="small"
-                    options={mockEmployees}
-                    value={formData.inspectionPersonnel}
-                    onChange={(_, v) => handleChange('inspectionPersonnel', v)}
+                    options={employees}
+                    getOptionLabel={(option) => option.full_name}
+                    value={employees.filter((e) => formData.personnelIds.includes(e.id))}
+                    onChange={(_, v) => handleChange('personnelIds', v.map((item) => item.id))}
                     sx={{ flex: 1, maxWidth: 500 }}
                     renderInput={(params) => (
                       <TextField {...params} placeholder={t('common.pleaseSelect')} />
@@ -758,9 +804,10 @@ export default function WorkOrderForm() {
                   </Typography>
                   <Autocomplete
                     size="small"
-                    options={mockProvinces}
-                    value={formData.province || null}
-                    onChange={(_, v) => handleProvinceChange(v || '')}
+                    options={provinces}
+                    getOptionLabel={(option) => option.name}
+                    value={provinces.find((p) => p.id === formData.provinceId) || null}
+                    onChange={(_, v) => handleProvinceChange(v?.id || null)}
                     sx={{ flex: 1, maxWidth: 400 }}
                     renderInput={(params) => (
                       <TextField {...params} placeholder={t('common.pleaseSelect')} />
@@ -776,15 +823,16 @@ export default function WorkOrderForm() {
                   </Typography>
                   <Autocomplete
                     size="small"
-                    options={formData.province ? (districtsByProvince[formData.province] || []) : []}
-                    value={formData.district || null}
-                    onChange={(_, v) => handleChange('district', v || '')}
-                    disabled={!formData.province}
+                    options={districts}
+                    getOptionLabel={(option) => option.name}
+                    value={districts.find((d) => d.id === formData.districtId) || null}
+                    onChange={(_, v) => handleChange('districtId', v?.id || null)}
+                    disabled={!formData.provinceId}
                     sx={{ flex: 1, maxWidth: 400 }}
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        placeholder={formData.province ? t('common.pleaseSelect') : t('common.selectFirstProvince')}
+                        placeholder={formData.provinceId ? t('common.pleaseSelect') : t('common.selectFirstProvince')}
                       />
                     )}
                   />
@@ -850,9 +898,10 @@ export default function WorkOrderForm() {
                     type="submit"
                     variant="contained"
                     size="large"
+                    disabled={submitting}
                     sx={{ minWidth: 200 }}
                   >
-                    {t('common.submit')}
+                    {submitting ? <CircularProgress size={24} /> : t('common.submit')}
                   </Button>
                 </Stack>
               </Grid>
