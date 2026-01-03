@@ -192,6 +192,16 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name }),
       }).then(r => handleResponse<LookupItem>(r)),
+    update: (id: number, data: { name: string; is_active?: boolean }) =>
+      fetch(`${API_BASE}/topics/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }).then(r => handleResponse<LookupItem>(r)),
+    delete: (id: number) =>
+      fetch(`${API_BASE}/topics/${id}`, {
+        method: 'DELETE',
+      }).then(r => handleResponse<{ success: boolean }>(r)),
   },
 
   provinces: {

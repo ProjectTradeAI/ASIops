@@ -197,6 +197,38 @@ app.post('/api/topics', async (req, res) => {
   }
 });
 
+app.put('/api/topics/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, is_active } = req.body;
+    const result = await pool.query(
+      'UPDATE topics SET name = $1, is_active = COALESCE($2, is_active) WHERE id = $3 RETURNING *',
+      [name, is_active, id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Topic not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating topic:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/topics/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('DELETE FROM topics WHERE id = $1 RETURNING *', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Topic not found' });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting topic:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.get('/api/provinces', async (_req, res) => {
   try {
     const result = await pool.query('SELECT * FROM provinces ORDER BY name');

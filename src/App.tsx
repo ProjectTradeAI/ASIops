@@ -7,6 +7,7 @@ import WorkOrderForm from './components/workOrders/WorkOrderForm';
 import CompaniesList from './components/masterData/CompaniesList';
 import EmployeesList from './components/masterData/EmployeesList';
 import ShipsList from './components/masterData/ShipsList';
+import TopicsPage from './components/masterData/TopicsPage';
 import ReportsPage from './components/reports/ReportsPage';
 import SettingsPage from './components/settings/SettingsPage';
 import NotFound from './components/common/NotFound';
@@ -45,7 +46,7 @@ function App() {
         <Route path="master-data/inspection-types" element={<div style={{ padding: 20 }}>Muayene Türleri (Phase 3'te geliştirilecek)</div>} />
         <Route path="master-data/locations" element={<div style={{ padding: 20 }}>Gözetim Yerleri (Phase 3'te geliştirilecek)</div>} />
         <Route path="master-data/tasks" element={<div style={{ padding: 20 }}>Yapılacak İşler (Phase 3'te geliştirilecek)</div>} />
-        <Route path="master-data/topics" element={<div style={{ padding: 20 }}>Konular (Phase 3'te geliştirilecek)</div>} />
+        <Route path="master-data/topics" element={<TopicsPage />} />
         <Route path="users" element={<div style={{ padding: 20 }}>Kullanıcı Yönetimi (Phase 3'te geliştirilecek)</div>} />
 
         {/* 404 Not Found - Catch all */}
