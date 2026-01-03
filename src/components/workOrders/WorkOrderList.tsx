@@ -9,6 +9,7 @@ import {
   TableHead,
   TableRow,
   TablePagination,
+  TableSortLabel,
   Chip,
   IconButton,
   Tooltip,
@@ -21,6 +22,9 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
+
+type Order = 'asc' | 'desc';
+type OrderBy = 'file_number' | 'status' | 'company_name' | 'ship_name' | 'topic_name' | 'report_date' | 'responsible' | 'tonnage';
 import {
   Visibility as VisibilityIcon,
   Edit as EditIcon,
@@ -44,6 +48,8 @@ export default function WorkOrderList() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [fileTypeFilter, setFileTypeFilter] = useState<string>('all');
+  const [order, setOrder] = useState<Order>('desc');
+  const [orderBy, setOrderBy] = useState<OrderBy>('file_number');
 
   useEffect(() => {
     loadWorkOrders();
@@ -74,6 +80,63 @@ export default function WorkOrderList() {
     }
   };
 
+  const handleRequestSort = (property: OrderBy) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
+
+  const sortedOrders = (orders: WorkOrder[]) => {
+    return [...orders].sort((a, b) => {
+      let aValue: string | number | null = null;
+      let bValue: string | number | null = null;
+
+      switch (orderBy) {
+        case 'file_number':
+          aValue = a.file_number;
+          bValue = b.file_number;
+          break;
+        case 'status':
+          aValue = a.status || '';
+          bValue = b.status || '';
+          break;
+        case 'company_name':
+          aValue = a.company_name || '';
+          bValue = b.company_name || '';
+          break;
+        case 'ship_name':
+          aValue = a.ship_name || '';
+          bValue = b.ship_name || '';
+          break;
+        case 'topic_name':
+          aValue = a.topic_name || '';
+          bValue = b.topic_name || '';
+          break;
+        case 'report_date':
+          aValue = a.report_date || '';
+          bValue = b.report_date || '';
+          break;
+        case 'responsible':
+          aValue = a.responsible || '';
+          bValue = b.responsible || '';
+          break;
+        case 'tonnage':
+          aValue = a.tonnage || 0;
+          bValue = b.tonnage || 0;
+          break;
+      }
+
+      if (aValue === null || bValue === null) return 0;
+      
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return order === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+      
+      const comparison = String(aValue).localeCompare(String(bValue), 'tr');
+      return order === 'asc' ? comparison : -comparison;
+    });
+  };
+
   const filteredOrders = workOrders.filter((order) => {
     if (fileTypeFilter !== 'all' && order.file_type !== fileTypeFilter) {
       return false;
@@ -88,7 +151,8 @@ export default function WorkOrderList() {
     );
   });
 
-  const paginatedOrders = filteredOrders.slice(
+  const sortedFilteredOrders = sortedOrders(filteredOrders);
+  const paginatedOrders = sortedFilteredOrders.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
@@ -214,14 +278,78 @@ export default function WorkOrderList() {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 600 }}>{t('workOrder.fileNumber')}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{t('workOrder.status')}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{t('workOrder.company')}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{t('workOrder.ship')}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{t('workOrder.topic')}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{t('workOrder.reportDate')}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{t('workOrder.responsible')}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{t('workOrder.tonnage')}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>
+                  <TableSortLabel
+                    active={orderBy === 'file_number'}
+                    direction={orderBy === 'file_number' ? order : 'asc'}
+                    onClick={() => handleRequestSort('file_number')}
+                  >
+                    {t('workOrder.fileNumber')}
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>
+                  <TableSortLabel
+                    active={orderBy === 'status'}
+                    direction={orderBy === 'status' ? order : 'asc'}
+                    onClick={() => handleRequestSort('status')}
+                  >
+                    {t('workOrder.status')}
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>
+                  <TableSortLabel
+                    active={orderBy === 'company_name'}
+                    direction={orderBy === 'company_name' ? order : 'asc'}
+                    onClick={() => handleRequestSort('company_name')}
+                  >
+                    {t('workOrder.company')}
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>
+                  <TableSortLabel
+                    active={orderBy === 'ship_name'}
+                    direction={orderBy === 'ship_name' ? order : 'asc'}
+                    onClick={() => handleRequestSort('ship_name')}
+                  >
+                    {t('workOrder.ship')}
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>
+                  <TableSortLabel
+                    active={orderBy === 'topic_name'}
+                    direction={orderBy === 'topic_name' ? order : 'asc'}
+                    onClick={() => handleRequestSort('topic_name')}
+                  >
+                    {t('workOrder.topic')}
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>
+                  <TableSortLabel
+                    active={orderBy === 'report_date'}
+                    direction={orderBy === 'report_date' ? order : 'asc'}
+                    onClick={() => handleRequestSort('report_date')}
+                  >
+                    {t('workOrder.reportDate')}
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>
+                  <TableSortLabel
+                    active={orderBy === 'responsible'}
+                    direction={orderBy === 'responsible' ? order : 'asc'}
+                    onClick={() => handleRequestSort('responsible')}
+                  >
+                    {t('workOrder.responsible')}
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>
+                  <TableSortLabel
+                    active={orderBy === 'tonnage'}
+                    direction={orderBy === 'tonnage' ? order : 'asc'}
+                    onClick={() => handleRequestSort('tonnage')}
+                  >
+                    {t('workOrder.tonnage')}
+                  </TableSortLabel>
+                </TableCell>
                 <TableCell align="center" sx={{ fontWeight: 600 }}>
                   {t('common.actions')}
                 </TableCell>
@@ -283,7 +411,7 @@ export default function WorkOrderList() {
 
         <TablePagination
           component="div"
-          count={filteredOrders.length}
+          count={sortedFilteredOrders.length}
           page={page}
           onPageChange={handleChangePage}
           rowsPerPage={rowsPerPage}
