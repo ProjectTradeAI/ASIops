@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -17,6 +17,7 @@ import {
   InputAdornment,
   Stack,
   Button,
+  CircularProgress,
 } from '@mui/material';
 import {
   Visibility as VisibilityIcon,
@@ -29,33 +30,51 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import mockWorkOrders from '../../data/mockWorkOrders.json';
-import { parseTurkishDateSafe } from '../../utils/dateUtils';
-// Data updated: All inspection types now use clean Turkish text
+import { api, WorkOrder } from '../../services/api';
 
 export default function WorkOrderList() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // Pagination state
+  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
+  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-
-  // Search state
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Filter work orders based on search
-  const filteredOrders = mockWorkOrders.filter((order) => {
+  useEffect(() => {
+    loadWorkOrders();
+  }, []);
+
+  const loadWorkOrders = async () => {
+    try {
+      setLoading(true);
+      const orders = await api.workOrders.getAll();
+      setWorkOrders(orders);
+    } catch (error) {
+      console.error('Error loading work orders:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getFileNumberDisplay = (order: WorkOrder) => {
+    const year = new Date().getFullYear().toString().slice(-2);
+    const paddedNumber = order.file_number.toString().padStart(4, '0');
+    return `${order.file_type}${year}-${paddedNumber}`;
+  };
+
+  const filteredOrders = workOrders.filter((order) => {
     const searchLower = searchTerm.toLowerCase();
+    const fileNumber = getFileNumberDisplay(order).toLowerCase();
     return (
-      order.fileNumber.toLowerCase().includes(searchLower) ||
-      order.companyName.toLowerCase().includes(searchLower) ||
-      order.shipName.toLowerCase().includes(searchLower) ||
-      order.inspectionType.toLowerCase().includes(searchLower)
+      fileNumber.includes(searchLower) ||
+      (order.company_name || '').toLowerCase().includes(searchLower) ||
+      (order.ship_name || '').toLowerCase().includes(searchLower) ||
+      (order.topic_name || '').toLowerCase().includes(searchLower)
     );
   });
 
-  // Paginated data
   const paginatedOrders = filteredOrders.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
@@ -88,9 +107,13 @@ export default function WorkOrderList() {
   };
 
   const formatDate = (dateString: string | null) => {
-    const date = parseTurkishDateSafe(dateString);
-    if (!date) return '-';
-    return format(date, 'dd MMM yyyy', { locale: tr });
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      return format(date, 'dd MMM yyyy', { locale: tr });
+    } catch {
+      return '-';
+    }
   };
 
   const handleView = (id: number) => {
@@ -102,16 +125,21 @@ export default function WorkOrderList() {
   };
 
   const handleDelete = (id: number) => {
-    // eslint-disable-next-line no-alert
     if (window.confirm(t('common.delete') + '?')) {
       console.log('Delete work order:', id);
-      // In real app, would call API here
     }
   };
 
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <Box>
-      {/* Page Header */}
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h4" sx={{ fontWeight: 600 }}>
           {t('menu.workOrders')}
@@ -126,7 +154,6 @@ export default function WorkOrderList() {
         </Button>
       </Box>
 
-      {/* Search and Filters */}
       <Paper sx={{ p: 2, mb: 2 }}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           <TextField
@@ -145,7 +172,6 @@ export default function WorkOrderList() {
         </Stack>
       </Paper>
 
-      {/* Data Table */}
       <Paper>
         <TableContainer>
           <Table>
@@ -155,9 +181,7 @@ export default function WorkOrderList() {
                 <TableCell sx={{ fontWeight: 600 }}>{t('workOrder.status')}</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>{t('workOrder.company')}</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>{t('workOrder.ship')}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>
-                  {t('menu.inspectionTypes').slice(0, -1)}
-                </TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{t('workOrder.topic')}</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>{t('workOrder.reportDate')}</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>{t('workOrder.responsible')}</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>{t('workOrder.tonnage')}</TableCell>
@@ -176,7 +200,7 @@ export default function WorkOrderList() {
               ) : (
                 paginatedOrders.map((order) => (
                   <TableRow key={order.id} hover>
-                    <TableCell sx={{ fontWeight: 600 }}>{order.fileNumber}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{getFileNumberDisplay(order)}</TableCell>
                     <TableCell>
                       <Chip
                         label={t(`workOrder.statuses.${order.status}`)}
@@ -184,12 +208,12 @@ export default function WorkOrderList() {
                         size="small"
                       />
                     </TableCell>
-                    <TableCell>{order.companyName}</TableCell>
-                    <TableCell>{order.shipName}</TableCell>
-                    <TableCell>{order.inspectionType}</TableCell>
-                    <TableCell>{formatDate(order.reportDate)}</TableCell>
-                    <TableCell>{order.responsibleUser}</TableCell>
-                    <TableCell>{order.tonnage ? `${order.tonnage.toLocaleString('tr-TR')} ton` : '-'}</TableCell>
+                    <TableCell>{order.company_name || '-'}</TableCell>
+                    <TableCell>{order.ship_name || '-'}</TableCell>
+                    <TableCell>{order.topic_name || '-'}</TableCell>
+                    <TableCell>{formatDate(order.report_date)}</TableCell>
+                    <TableCell>{order.responsible || '-'}</TableCell>
+                    <TableCell>{order.tonnage ? `${Number(order.tonnage).toLocaleString('tr-TR')} ton` : '-'}</TableCell>
                     <TableCell align="center">
                       <Stack direction="row" spacing={0.5} justifyContent="center">
                         <Tooltip title={t('common.view')}>
@@ -220,7 +244,6 @@ export default function WorkOrderList() {
           </Table>
         </TableContainer>
 
-        {/* Pagination */}
         <TablePagination
           component="div"
           count={filteredOrders.length}
