@@ -20,10 +20,14 @@ app.get('/api/companies', async (_req, res) => {
 
 app.post('/api/companies', async (req, res) => {
   try {
-    const { company_name, tax_number, tax_office, address, phone, email } = req.body;
+    const { company_name, name, tax_number, tax_office, address, phone, email } = req.body;
+    const companyName = company_name || name;
+    if (!companyName) {
+      return res.status(400).json({ error: 'Company name is required' });
+    }
     const result = await pool.query(
       'INSERT INTO companies (company_name, tax_number, tax_office, address, phone, email) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [company_name, tax_number, tax_office, address, phone, email]
+      [companyName, tax_number || null, tax_office || null, address || null, phone || null, email || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -44,10 +48,14 @@ app.get('/api/employees', async (_req, res) => {
 
 app.post('/api/employees', async (req, res) => {
   try {
-    const { full_name, registration_number, phone, email, expertise } = req.body;
+    const { full_name, name, registration_number, phone, email, expertise } = req.body;
+    const employeeName = full_name || name;
+    if (!employeeName) {
+      return res.status(400).json({ error: 'Employee name is required' });
+    }
     const result = await pool.query(
       'INSERT INTO employees (full_name, registration_number, phone, email, expertise) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [full_name, registration_number, phone, email, expertise]
+      [employeeName, registration_number || null, phone || null, email || null, expertise || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -68,10 +76,14 @@ app.get('/api/ships', async (_req, res) => {
 
 app.post('/api/ships', async (req, res) => {
   try {
-    const { ship_name, imo_number, flag, ship_type, deadweight } = req.body;
+    const { ship_name, name, imo_number, flag, ship_type, deadweight } = req.body;
+    const shipName = ship_name || name;
+    if (!shipName) {
+      return res.status(400).json({ error: 'Ship name is required' });
+    }
     const result = await pool.query(
       'INSERT INTO ships (ship_name, imo_number, flag, ship_type, deadweight) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [ship_name, imo_number, flag, ship_type, deadweight]
+      [shipName, imo_number || null, flag || null, ship_type || null, deadweight || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
