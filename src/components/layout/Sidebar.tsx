@@ -21,7 +21,6 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import DescriptionIcon from '@mui/icons-material/Description';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
-import ListIcon from '@mui/icons-material/List';
 import BusinessIcon from '@mui/icons-material/Business';
 import PeopleIcon from '@mui/icons-material/People';
 import DirectionsBoatIcon from '@mui/icons-material/DirectionsBoat';
@@ -165,8 +164,6 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               {[
                 { path: '/work-orders/new', icon: AddIcon, label: t('menu.newWorkOrder') },
                 { path: '/work-orders/search', icon: SearchIcon, label: t('menu.searchWorkOrders') },
-                { path: '/work-orders/list-asi', icon: ListIcon, label: 'ASI' },
-                { path: '/work-orders/list-asic', icon: ListIcon, label: 'ASIC' },
               ].map((item) => (
                 <ListItemButton
                   key={item.path}
