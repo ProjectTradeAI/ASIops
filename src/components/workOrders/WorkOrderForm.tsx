@@ -956,30 +956,38 @@ export default function WorkOrderForm() {
                 </Stack>
               </Grid>
 
-              <Grid item xs={12}>
-                <Divider sx={{ my: 2 }} />
-              </Grid>
-
-              <Grid item xs={12}>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Typography variant="body2" fontWeight={600} color="primary" sx={{ minWidth: 140 }}>
-                    {t('workOrder.operation').toUpperCase()}
-                  </Typography>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    size="large"
-                    disabled={submitting}
-                    sx={{ minWidth: 200 }}
-                  >
-                    {submitting ? <CircularProgress size={24} /> : t('common.submit')}
-                  </Button>
-                </Stack>
-              </Grid>
             </Grid>
           </Box>
         </form>
       </Paper>
+
+      <Box
+        sx={{
+          position: 'fixed',
+          bottom: 24,
+          right: 24,
+          zIndex: 1000,
+        }}
+      >
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          disabled={submitting}
+          onClick={handleSubmit}
+          sx={{
+            minWidth: 160,
+            height: 56,
+            borderRadius: 28,
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+            '&:hover': {
+              boxShadow: '0 6px 24px rgba(0, 0, 0, 0.3)',
+            },
+          }}
+        >
+          {submitting ? <CircularProgress size={24} /> : t('common.submit')}
+        </Button>
+      </Box>
 
       <Dialog 
         open={addDialogOpen} 
