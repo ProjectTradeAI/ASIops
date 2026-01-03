@@ -4,7 +4,7 @@
 
 ASI Operations is a ship inspection and work order management system for maritime operations. The application provides a Turkish-language interface for managing ship inspections, work orders, companies, employees, and vessels. It features a dashboard with statistics, comprehensive CRUD operations for master data, and reporting capabilities.
 
-The system is built as a single-page application using React with TypeScript, Material-UI for the component library, and Vite as the build tool. Currently operates with mock JSON data files simulating a production dataset of 544 work orders, 125 companies, 67 employees, and 455 ships.
+The system is a full-stack application with React/TypeScript frontend, Express.js backend, and PostgreSQL database for data persistence.
 
 ## User Preferences
 
@@ -19,6 +19,27 @@ Preferred communication style: Simple, everyday language.
 - **Routing**: React Router DOM v6 with nested routes under MainLayout
 - **State Management**: React useState hooks (no external state library)
 - **Internationalization**: i18next configured for Turkish (tr) as primary language
+- **API Service**: Centralized API service layer in `src/services/api.ts`
+
+### Backend Architecture
+- **Framework**: Express.js with TypeScript (tsx)
+- **Database**: PostgreSQL (Neon-backed via Replit)
+- **Port**: Backend runs on port 3001
+- **Endpoints**: RESTful API for all entities
+
+### Database Schema
+- `companies` - Company master data (company_name, tax_number, tax_office, address, phone, email)
+- `employees` - Employee master data (full_name, registration_number, phone, email, expertise)
+- `ships` - Ship master data (ship_name, imo_number, flag, ship_type, deadweight)
+- `work_orders` - Main work order records with foreign keys to all related tables
+- `inspection_areas` - Lookup table for inspection areas
+- `inspection_items` - Lookup table for inspection items
+- `inspection_types` - Lookup table for inspection types
+- `locations` - Lookup table for supervision locations
+- `topics` - Lookup table for work order topics
+- `provinces` - Turkish provinces
+- `districts` - Turkish districts with province_id foreign key
+- Junction tables: `work_order_inspection_types`, `work_order_personnel`, `work_order_tasks`
 
 ### Component Structure
 - `components/layout/` - MainLayout, Sidebar, Header, Footer, Breadcrumbs
@@ -29,10 +50,19 @@ Preferred communication style: Simple, everyday language.
 - `components/settings/` - SettingsPage
 - `components/common/` - NotFound
 
-### Data Layer
-- Mock JSON files in `src/data/` directory simulate backend data
-- Date handling uses custom utility functions in `src/utils/dateUtils.ts` for Turkish date format (DD/MM/YYYY)
-- No backend or database currently implemented - designed for future API integration
+### API Endpoints
+- `GET/POST /api/companies` - Company CRUD
+- `GET/POST /api/employees` - Employee CRUD
+- `GET/POST /api/ships` - Ship CRUD
+- `GET/POST /api/work-orders` - Work order CRUD
+- `GET/POST /api/inspection-areas` - Inspection areas lookup
+- `GET/POST /api/inspection-items` - Inspection items lookup
+- `GET/POST /api/inspection-types` - Inspection types lookup
+- `GET/POST /api/locations` - Locations lookup
+- `GET/POST /api/topics` - Topics lookup
+- `GET /api/provinces` - Turkish provinces
+- `GET /api/districts/:provinceId` - Districts by province
+- `GET /api/next-file-number/:fileType` - Generate next file number (ASIC26-0001 format)
 
 ### Theming
 - Custom MUI theme in `src/theme/theme.ts`
@@ -41,11 +71,12 @@ Preferred communication style: Simple, everyday language.
 - Extended palette with gradient definitions and Tailwind-inspired shadows
 - Turkish locale configuration for MUI components
 
-### Recent Design Updates (January 2026)
-- Header: Dark gradient background with glassmorphism, gradient logo badge
-- Sidebar: Collapsible navigation with section grouping, smooth animations, modern footer
-- Dashboard: Gradient stat cards, modern quick action buttons with hover effects
-- Components: Enhanced charts, modern tables, consistent gradient accents throughout
+### Recent Updates (January 2026)
+- Full-stack integration with PostgreSQL database
+- Work order form now persists to database with all relationships
+- Add dialogs persist new items (companies, ships, employees, lookup values) to database
+- File number auto-generation from database sequence (ASIC26-0001 format)
+- Province/district dependent selection from database
 
 ### Path Aliases
 - `@/*` maps to `./src/*` for cleaner imports
@@ -65,12 +96,23 @@ Preferred communication style: Simple, everyday language.
 ### Internationalization
 - `i18next` and `react-i18next` - Multi-language support (currently Turkish only)
 
+### Backend
+- `express` - Web server framework
+- `pg` - PostgreSQL client
+- `cors` - Cross-origin resource sharing
+- `tsx` - TypeScript execution
+
 ### Development
 - TypeScript for type safety
 - ESLint for code linting
 - Vite dev server configured on port 5000 with host 0.0.0.0
+- `concurrently` for running frontend and backend together
 
-### Future Considerations
-- No backend/API currently - mock data only
-- Authentication placeholders exist but not implemented
-- Several routes marked as "Phase 3" placeholders for future development
+## Running the Application
+
+The application uses `npm run dev` which runs both:
+- Frontend (Vite) on port 5000
+- Backend (Express) on port 3001
+
+Environment variables:
+- `DATABASE_URL` - PostgreSQL connection string (auto-configured by Replit)
