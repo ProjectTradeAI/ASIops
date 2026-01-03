@@ -18,6 +18,8 @@ import {
   Stack,
   Button,
   CircularProgress,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import {
   Visibility as VisibilityIcon,
@@ -41,6 +43,7 @@ export default function WorkOrderList() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
+  const [fileTypeFilter, setFileTypeFilter] = useState<string>('all');
 
   useEffect(() => {
     loadWorkOrders();
@@ -64,7 +67,17 @@ export default function WorkOrderList() {
     return `${order.file_type}${year}-${paddedNumber}`;
   };
 
+  const handleFileTypeChange = (_event: React.MouseEvent<HTMLElement>, newFilter: string | null) => {
+    if (newFilter !== null) {
+      setFileTypeFilter(newFilter);
+      setPage(0);
+    }
+  };
+
   const filteredOrders = workOrders.filter((order) => {
+    if (fileTypeFilter !== 'all' && order.file_type !== fileTypeFilter) {
+      return false;
+    }
     const searchLower = searchTerm.toLowerCase();
     const fileNumber = getFileNumberDisplay(order).toLowerCase();
     return (
@@ -155,7 +168,31 @@ export default function WorkOrderList() {
       </Box>
 
       <Paper sx={{ p: 2, mb: 2 }}>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+          <ToggleButtonGroup
+            value={fileTypeFilter}
+            exclusive
+            onChange={handleFileTypeChange}
+            size="small"
+            sx={{
+              '& .MuiToggleButton-root': {
+                px: 3,
+                fontWeight: 600,
+                '&.Mui-selected': {
+                  backgroundColor: 'primary.main',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: 'primary.dark',
+                  },
+                },
+              },
+            }}
+          >
+            <ToggleButton value="all">Hepsi</ToggleButton>
+            <ToggleButton value="ASIC">ASIC</ToggleButton>
+            <ToggleButton value="ASI">ASI</ToggleButton>
+            <ToggleButton value="FT">FT</ToggleButton>
+          </ToggleButtonGroup>
           <TextField
             fullWidth
             placeholder={t('menu.searchWorkOrders')}
