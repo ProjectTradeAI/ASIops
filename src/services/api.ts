@@ -205,6 +205,7 @@ export const api = {
 
   workOrders: {
     getAll: () => fetch(`${API_BASE}/work-orders`).then(r => handleResponse<WorkOrder[]>(r)),
+    getById: (id: number) => fetch(`${API_BASE}/work-orders/${id}`).then(r => handleResponse<WorkOrder & { inspection_types: {id: number, name: string}[], personnel: {id: number, full_name: string}[], tasks: string[] }>(r)),
     getNextNumber: (fileType: string) =>
       fetch(`${API_BASE}/work-orders/next-number/${fileType}`)
         .then(r => handleResponse<{ nextNumber: number }>(r)),
@@ -214,5 +215,11 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       }).then(r => handleResponse<WorkOrder>(r)),
+    update: (id: number, data: Partial<CreateWorkOrderData>) =>
+      fetch(`${API_BASE}/work-orders/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }).then(r => handleResponse<{ success: boolean }>(r)),
   },
 };

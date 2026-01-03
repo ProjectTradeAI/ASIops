@@ -53,6 +53,7 @@ const taskOptions = [
 ];
 
 const statusOptions = [
+  { value: 'created', label: 'Oluşturuldu' },
   { value: 'delivered', label: 'Teslim Edildi' },
   { value: 'in_progress', label: 'İşlemde' },
   { value: 'reported', label: 'Raporlandı' },
@@ -191,7 +192,38 @@ export default function WorkOrderForm() {
         setTopics(topicsData);
         setProvinces(provincesData);
 
-        if (!isEditMode) {
+        if (isEditMode && id) {
+          const workOrder = await api.workOrders.getById(Number(id));
+          if (workOrder.province_id) {
+            const districtsData = await api.districts.getByProvince(workOrder.province_id);
+            setDistricts(districtsData);
+          }
+          setFormData({
+            fileType: workOrder.file_type as 'ASIC' | 'ASI' | 'FT',
+            fileNumber: workOrder.file_number,
+            status: workOrder.status || 'in_progress',
+            openDate: workOrder.open_date ? new Date(workOrder.open_date).toISOString().slice(0, 16) : '',
+            reportDate: workOrder.report_date ? workOrder.report_date.split('T')[0] : '',
+            inspectionDate: workOrder.inspection_date ? workOrder.inspection_date.split('T')[0] : '',
+            dateRangeEnd: workOrder.date_range_end ? workOrder.date_range_end.split('T')[0] : '',
+            invoiceNumber: workOrder.invoice_number || '',
+            responsible: workOrder.responsible || 'Leyla',
+            tonnage: workOrder.tonnage ? String(workOrder.tonnage) : '',
+            topicId: workOrder.topic_id,
+            companyId: workOrder.company_id,
+            customerRefNo: workOrder.customer_ref_no || '',
+            shipId: workOrder.ship_id,
+            inspectionAreaId: workOrder.inspection_area_id,
+            inspectionItemId: workOrder.inspection_item_id,
+            inspectionTypeIds: workOrder.inspection_types?.map((t: {id: number}) => t.id) || [],
+            supervisionLocationId: workOrder.supervision_location_id,
+            personnelIds: workOrder.personnel?.map((p: {id: number}) => p.id) || [],
+            provinceId: workOrder.province_id,
+            districtId: workOrder.district_id,
+            selectedTasks: workOrder.tasks || [],
+            otherTasksDescription: workOrder.other_tasks_description || '',
+          });
+        } else {
           const nextNumber = await loadNextFileNumber('ASIC');
           setFormData((prev) => ({ ...prev, fileNumber: nextNumber }));
         }
@@ -204,7 +236,7 @@ export default function WorkOrderForm() {
     };
 
     loadData();
-  }, [isEditMode, loadNextFileNumber]);
+  }, [isEditMode, id, loadNextFileNumber]);
 
   useEffect(() => {
     const loadDistricts = async () => {
@@ -323,7 +355,7 @@ export default function WorkOrderForm() {
 
     setSubmitting(true);
     try {
-      await api.workOrders.create({
+      const workOrderData = {
         file_type: formData.fileType,
         file_number: formData.fileNumber,
         status: formData.status,
@@ -346,7 +378,13 @@ export default function WorkOrderForm() {
         inspection_type_ids: formData.inspectionTypeIds,
         personnel_ids: formData.personnelIds,
         selected_tasks: formData.selectedTasks,
-      });
+      };
+
+      if (isEditMode && id) {
+        await api.workOrders.update(Number(id), workOrderData);
+      } else {
+        await api.workOrders.create(workOrderData);
+      }
       alert(isEditMode ? 'İş emri güncellendi!' : 'Yeni iş emri oluşturuldu!');
       navigate('/work-orders');
     } catch (err) {
@@ -406,7 +444,7 @@ export default function WorkOrderForm() {
               <ArrowBackIcon />
             </IconButton>
             <Typography variant="h5" sx={{ fontWeight: 600 }}>
-              {t('workOrder.formTitle')}
+              {isEditMode ? t('workOrder.editTitle') : t('workOrder.formTitle')}
             </Typography>
           </Box>
 
@@ -416,6 +454,7 @@ export default function WorkOrderForm() {
               exclusive
               onChange={handleFileTypeChange}
               size="small"
+              disabled={isEditMode}
               aria-label={t('workOrder.fileType')}
               sx={{
                 '& .MuiToggleButton-root': {
@@ -451,7 +490,7 @@ export default function WorkOrderForm() {
         <Box sx={{ bgcolor: '#1a237e', color: 'white', py: 1, px: 2 }}>
           <Typography variant="body2">
             <AddIcon sx={{ fontSize: 16, mr: 1, verticalAlign: 'middle' }} />
-            {t('workOrder.addForm')}
+            {isEditMode ? t('workOrder.editForm') : t('workOrder.addForm')}
           </Typography>
         </Box>
 

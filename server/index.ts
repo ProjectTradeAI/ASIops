@@ -248,6 +248,146 @@ app.get('/api/work-orders', async (_req, res) => {
   }
 });
 
+app.get('/api/work-orders/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(`
+      SELECT wo.*, 
+        c.company_name, 
+        s.ship_name,
+        ia.name as inspection_area_name,
+        ii.name as inspection_item_name,
+        l.name as supervision_location_name,
+        t.name as topic_name,
+        p.name as province_name,
+        d.name as district_name
+      FROM work_orders wo
+      LEFT JOIN companies c ON wo.company_id = c.id
+      LEFT JOIN ships s ON wo.ship_id = s.id
+      LEFT JOIN inspection_areas ia ON wo.inspection_area_id = ia.id
+      LEFT JOIN inspection_items ii ON wo.inspection_item_id = ii.id
+      LEFT JOIN locations l ON wo.supervision_location_id = l.id
+      LEFT JOIN topics t ON wo.topic_id = t.id
+      LEFT JOIN provinces p ON wo.province_id = p.id
+      LEFT JOIN districts d ON wo.district_id = d.id
+      WHERE wo.id = $1
+    `, [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Work order not found' });
+    }
+
+    const workOrder = result.rows[0];
+
+    const typesResult = await pool.query(
+      `SELECT it.id, it.name FROM work_order_inspection_types woit 
+       JOIN inspection_types it ON woit.inspection_type_id = it.id 
+       WHERE woit.work_order_id = $1`, [id]
+    );
+    const personnelResult = await pool.query(
+      `SELECT e.id, e.full_name FROM work_order_personnel wop 
+       JOIN employees e ON wop.employee_id = e.id 
+       WHERE wop.work_order_id = $1`, [id]
+    );
+    const tasksResult = await pool.query(
+      `SELECT task_name FROM work_order_tasks WHERE work_order_id = $1`, [id]
+    );
+
+    workOrder.inspection_types = typesResult.rows;
+    workOrder.personnel = personnelResult.rows;
+    workOrder.tasks = tasksResult.rows.map(r => r.task_name);
+
+    res.json(workOrder);
+  } catch (error) {
+    console.error('Error fetching work order:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/api/work-orders/:id', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { id } = req.params;
+    const {
+      status,
+      report_date,
+      inspection_date,
+      date_range_end,
+      invoice_number,
+      tonnage,
+      topic_id,
+      company_id,
+      customer_ref_no,
+      ship_id,
+      inspection_area_id,
+      inspection_item_id,
+      supervision_location_id,
+      province_id,
+      district_id,
+      other_tasks_description,
+      inspection_type_ids,
+      personnel_ids,
+      selected_tasks
+    } = req.body;
+
+    await client.query(
+      `UPDATE work_orders SET
+        status = $1, report_date = $2, inspection_date = $3, date_range_end = $4,
+        invoice_number = $5, tonnage = $6, topic_id = $7, company_id = $8,
+        customer_ref_no = $9, ship_id = $10, inspection_area_id = $11, 
+        inspection_item_id = $12, supervision_location_id = $13, province_id = $14,
+        district_id = $15, other_tasks_description = $16, updated_at = NOW()
+      WHERE id = $17`,
+      [status, report_date || null, inspection_date || null, date_range_end || null,
+       invoice_number, tonnage || null, topic_id || null, company_id || null,
+       customer_ref_no, ship_id || null, inspection_area_id || null,
+       inspection_item_id || null, supervision_location_id || null, province_id || null,
+       district_id || null, other_tasks_description, id]
+    );
+
+    await client.query('DELETE FROM work_order_inspection_types WHERE work_order_id = $1', [id]);
+    await client.query('DELETE FROM work_order_personnel WHERE work_order_id = $1', [id]);
+    await client.query('DELETE FROM work_order_tasks WHERE work_order_id = $1', [id]);
+
+    if (inspection_type_ids && inspection_type_ids.length > 0) {
+      for (const typeId of inspection_type_ids) {
+        await client.query(
+          'INSERT INTO work_order_inspection_types (work_order_id, inspection_type_id) VALUES ($1, $2)',
+          [id, typeId]
+        );
+      }
+    }
+
+    if (personnel_ids && personnel_ids.length > 0) {
+      for (const personnelId of personnel_ids) {
+        await client.query(
+          'INSERT INTO work_order_personnel (work_order_id, employee_id) VALUES ($1, $2)',
+          [id, personnelId]
+        );
+      }
+    }
+
+    if (selected_tasks && selected_tasks.length > 0) {
+      for (const taskName of selected_tasks) {
+        await client.query(
+          'INSERT INTO work_order_tasks (work_order_id, task_name) VALUES ($1, $2)',
+          [id, taskName]
+        );
+      }
+    }
+
+    await client.query('COMMIT');
+    res.json({ success: true });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error updating work order:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release();
+  }
+});
+
 app.get('/api/work-orders/next-number/:fileType', async (req, res) => {
   try {
     const { fileType } = req.params;
