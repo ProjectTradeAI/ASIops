@@ -118,10 +118,13 @@
     "auditTrail": "İşlem Geçmişi",
     "statuses": {
       "created": "Oluşturuldu",
-      "in_progress": "Devam Ediyor",
+      "delivered": "Teslim Edildi",
+      "in_progress": "İşlemde",
       "reported": "Raporlandı",
+      "awaiting_invoice": "Fatura Bekliyor",
       "completed": "Tamamlandı",
-      "cancelled": "İptal Edildi"
+      "cancelled": "İptal Edildi",
+      "archived": "Arşivlendi"
     },
     "tasks": {
       "countBag": "Adet/Bağ Sayımı",
